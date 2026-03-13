@@ -41,7 +41,7 @@ export function ExpandToolbar() {
                 : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
-            リスト
+            アウトライン
           </button>
           <button
             onClick={() => setViewMode('diagram')}
@@ -51,7 +51,7 @@ export function ExpandToolbar() {
                 : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
-            樹形図
+            ツリー
           </button>
           <button
             onClick={() => setViewMode('outline')}
@@ -61,7 +61,7 @@ export function ExpandToolbar() {
                 : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
-            アウトライン
+            プレーン
           </button>
         </div>
 
@@ -90,8 +90,8 @@ export function ExpandToolbar() {
           {useArabicNum ? '1,2,3' : '一,二,三'}
         </button>
 
-        {/* 展開レベル（リストビュー時のみ） - デスクトップでは同一行 */}
-        {viewMode === 'list' && (
+        {/* 展開レベル（プレーン以外） - デスクトップでは同一行 */}
+        {viewMode !== 'outline' && (
           <div className="hidden md:flex items-center gap-1 ml-1 flex-shrink-0">
             <div className="w-px h-4 bg-gray-300 mx-1" />
             <span className="text-xs text-gray-500 mr-0.5">展開:</span>
@@ -161,8 +161,8 @@ export function ExpandToolbar() {
         </div>
       </div>
 
-      {/* 2行目: モバイルのみ - 展開レベル or ズーム */}
-      {viewMode === 'list' && (
+      {/* 2行目: モバイルのみ - 展開レベル */}
+      {viewMode !== 'outline' && (
         <div className="md:hidden flex items-center gap-1 px-3 py-1 border-t border-gray-100 overflow-x-auto">
           <span className="text-xs text-gray-500 mr-0.5 flex-shrink-0">展開:</span>
           {EXPAND_LEVELS.map((level) => {

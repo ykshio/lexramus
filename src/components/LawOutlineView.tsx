@@ -81,10 +81,10 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
     return (
       <div id={`law-node-${node.id}`} className={`mt-0.5 group flex items-start gap-1 ${tagBg} ${dimmed ? 'opacity-30' : ''}`}>
         {isTaggable && <TagPicker nodeId={node.id} />}
-        <span className="text-sm text-gray-600 leading-relaxed flex-1">
-          {title && <span className="font-medium mr-1">{title}</span>}
-          {node.content}
-        </span>
+        <div className="flex items-baseline gap-0 text-sm text-gray-600 leading-relaxed flex-1">
+          {title && <span className="shrink-0 font-medium">{title}</span>}
+          {node.content && <span>{title ? '\u3000' : ''}{node.content}</span>}
+        </div>
       </div>
     )
   }
@@ -93,10 +93,10 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
     return (
       <div id={`law-node-${node.id}`} className={`ml-4 mt-0.5 group flex items-start gap-1 ${tagBg} ${dimmed ? 'opacity-30' : ''}`}>
         {isTaggable && <TagPicker nodeId={node.id} />}
-        <span className="text-sm text-gray-600 flex-1">
-          {node.title && <span className="font-medium mr-1">{node.title}</span>}
-          {node.content}
-        </span>
+        <div className="flex items-baseline gap-0 text-sm text-gray-600 flex-1">
+          {node.title && <span className="shrink-0 font-medium">{node.title}</span>}
+          {node.content && <span>{node.title ? '\u3000' : ''}{node.content}</span>}
+        </div>
       </div>
     )
   }

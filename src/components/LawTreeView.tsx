@@ -78,27 +78,39 @@ function TreeNode({ node }: { node: LawTreeNode }) {
           <span className="w-4 flex-shrink-0" />
         )}
         <div className="min-w-0 flex-1">
-          {displayTitle && (
-            <span
-              className={`text-sm ${
-                isStructural
-                  ? 'font-semibold text-gray-800'
-                  : 'font-medium text-gray-700'
-              }`}
-            >
-              {textSearchQuery ? highlightText(displayTitle, textSearchQuery) : displayTitle}
-            </span>
-          )}
-          {showInline && node.content && (
-            <span className="text-sm text-gray-600">
-              {displayTitle ? '\u3000' : ''}
-              {textSearchQuery ? highlightText(node.content, textSearchQuery) : node.content}
-            </span>
-          )}
-          {!showInline && node.content && (
-            <p className="text-sm text-gray-600 mt-0.5 leading-relaxed">
-              {textSearchQuery ? highlightText(node.content, textSearchQuery) : node.content}
-            </p>
+          {showInline ? (
+            <div className="flex items-baseline gap-0">
+              {displayTitle && (
+                <span className="shrink-0 text-sm font-medium text-gray-700">
+                  {textSearchQuery ? highlightText(displayTitle, textSearchQuery) : displayTitle}
+                </span>
+              )}
+              {node.content && (
+                <span className="text-sm text-gray-600">
+                  {displayTitle ? '\u3000' : ''}
+                  {textSearchQuery ? highlightText(node.content, textSearchQuery) : node.content}
+                </span>
+              )}
+            </div>
+          ) : (
+            <>
+              {displayTitle && (
+                <span
+                  className={`text-sm ${
+                    isStructural
+                      ? 'font-semibold text-gray-800'
+                      : 'font-medium text-gray-700'
+                  }`}
+                >
+                  {textSearchQuery ? highlightText(displayTitle, textSearchQuery) : displayTitle}
+                </span>
+              )}
+              {node.content && (
+                <p className="text-sm text-gray-600 mt-0.5 leading-relaxed">
+                  {textSearchQuery ? highlightText(node.content, textSearchQuery) : node.content}
+                </p>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -93,7 +93,7 @@ const TYPE_ORDER: Record<string, number> = {
 
 // 展開レベルの順序（フォールバック用）
 const LEVEL_FALLBACK_ORDER: ExpandLevel[] = [
-  'part', 'chapter', 'section', 'subsection', 'division', 'article', 'paragraph',
+  'part', 'chapter', 'section', 'subsection', 'division', 'article', 'paragraph', 'item', 'subitem',
 ]
 
 // ツリー内の全ノードタイプを収集

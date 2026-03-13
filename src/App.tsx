@@ -60,10 +60,13 @@ function App() {
 
         {/* 検索パネル */}
         <div className={`
-          ${searchPanelOpen ? 'translate-x-0' : '-translate-x-full'}
-          fixed md:relative z-20 md:z-0
-          w-72 flex-shrink-0 h-full bg-white
-          transition-transform duration-200 ease-in-out
+          ${searchPanelOpen
+            ? 'max-md:translate-x-0 md:w-72'
+            : 'max-md:-translate-x-full md:w-0 md:overflow-hidden'}
+          max-md:fixed max-md:w-72 max-md:z-20
+          md:relative md:z-0
+          flex-shrink-0 h-full bg-white
+          transition-all duration-200 ease-in-out
           border-r border-gray-200
         `}>
           <SearchPanel />

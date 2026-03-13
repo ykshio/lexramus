@@ -14,6 +14,13 @@ const TAG_TO_NODE_TYPE: Record<string, LawNodeType> = {
   Subitem1: 'subitem',
   Subitem2: 'subitem',
   Subitem3: 'subitem',
+  Subitem4: 'subitem',
+  Subitem5: 'subitem',
+  Subitem6: 'subitem',
+  Subitem7: 'subitem',
+  Subitem8: 'subitem',
+  Subitem9: 'subitem',
+  Subitem10: 'subitem',
   SupplProvision: 'suppl_provision',
   TOC: 'toc',
   Preamble: 'preamble',
@@ -96,6 +103,12 @@ function extractTitle(element: LawElement): string {
     return ''
   }
 
+  if (element.tag.startsWith('Subitem')) {
+    const titleEl = findChild(element, `${element.tag}Title`)
+    if (titleEl) return extractText(titleEl)
+    return ''
+  }
+
   const titleTag = TITLE_TAGS[element.tag]
   if (titleTag) {
     const titleEl = findChild(element, titleTag)
@@ -128,10 +141,8 @@ function extractContent(element: LawElement): string {
     if (
       child.tag === 'ParagraphSentence' ||
       child.tag === 'ItemSentence' ||
-      child.tag === 'Subitem1Sentence' ||
-      child.tag === 'Subitem2Sentence' ||
-      child.tag === 'Subitem3Sentence' ||
-      child.tag === 'PreambleSentence'
+      child.tag === 'PreambleSentence' ||
+      /^Subitem\d+Sentence$/.test(child.tag)
     ) {
       parts.push(extractText(child))
     }
