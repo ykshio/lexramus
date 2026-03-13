@@ -57,25 +57,55 @@ interface LawStore {
   setSearchPanelOpen: (open: boolean) => void
 }
 
-// ノードタイプの深さ順序
-const LEVEL_ORDER: ExpandLevel[] = [
-  'part', 'chapter', 'section', 'subsection', 'division', 'article', 'paragraph',
-]
+// 階層の順序（浅い→深い）
+const TYPE_ORDER: Record<string, number> = {
+  toc: 0,
+  preamble: 0,
+  part: 1,
+  chapter: 2,
+  section: 3,
+  subsection: 4,
+  division: 5,
+  article: 6,
+  paragraph: 7,
+  item: 8,
+  subitem: 9,
+  suppl_provision: 1,
+}
 
-// 指定レベルまで展開し、それより深い階層は閉じる
-function collectNodeIds(nodes: LawTreeNode[], upToLevel: ExpandLevel): Set<string> {
+// 指定タイプのノードが「見える」ように、その親を全て展開する
+// 指定タイプのノード自体は展開しない（子は見えない）
+function collectExpandedIds(nodes: LawTreeNode[], targetType: ExpandLevel): Set<string> {
   const ids = new Set<string>()
-  const levelIndex = LEVEL_ORDER.indexOf(upToLevel)
+  const targetOrder = TYPE_ORDER[targetType] ?? 99
 
-  function walk(node: LawTreeNode) {
-    const nodeIndex = LEVEL_ORDER.indexOf(node.type as ExpandLevel)
-    // 指定レベルより浅い階層のみ展開（指定レベル自体は表示されるが展開しない）
-    if (nodeIndex !== -1 && nodeIndex < levelIndex) {
+  function walk(node: LawTreeNode): boolean {
+    const nodeOrder = TYPE_ORDER[node.type] ?? 99
+
+    // このノードが対象タイプなら、このノード自体は展開しない（見えるだけ）
+    if (node.type === targetType) {
+      return true // 親に「子孫に対象がいる」と伝える
+    }
+
+    // このノードが対象より深い場合、展開しない
+    if (nodeOrder > targetOrder) {
+      return false
+    }
+
+    // 子を走査して、子孫に対象タイプがあるか確認
+    let hasTarget = false
+    for (const child of node.children) {
+      if (walk(child)) {
+        hasTarget = true
+      }
+    }
+
+    // 子孫に対象がいるなら、このノードを展開する
+    if (hasTarget) {
       ids.add(node.id)
     }
-    for (const child of node.children) {
-      walk(child)
-    }
+
+    return hasTarget
   }
 
   for (const node of nodes) {
@@ -157,14 +187,13 @@ export const useLawStore = create<LawStore>((set, get) => ({
     try {
       const res = await getLawData(lawId, asof ?? undefined)
       const tree = parseLawFullText(res.law_full_text)
-      const expanded = collectNodeIds(tree, 'chapter')
+      const expanded = collectExpandedIds(tree, 'chapter')
       set({
         lawTree: tree,
         lawLoading: false,
         expandedNodes: expanded,
         expandLevel: 'chapter',
       })
-      // 改正履歴をバックグラウンドで取得
       get().loadRevisions()
     } catch (e) {
       set({
@@ -176,7 +205,7 @@ export const useLawStore = create<LawStore>((set, get) => ({
 
   setExpandLevel: (level) => {
     const { lawTree } = get()
-    const expanded = collectNodeIds(lawTree, level)
+    const expanded = collectExpandedIds(lawTree, level)
     set({ expandLevel: level, expandedNodes: expanded })
   },
 
@@ -197,7 +226,6 @@ export const useLawStore = create<LawStore>((set, get) => ({
 
   setAsof: (date) => {
     set({ asof: date })
-    // 法令が選択されていれば再取得
     const { selectedLawId, selectedLawTitle, selectedLawNum } = get()
     if (selectedLawId && selectedLawTitle && selectedLawNum) {
       get().selectLaw(selectedLawId, selectedLawTitle, selectedLawNum)
@@ -219,7 +247,6 @@ export const useLawStore = create<LawStore>((set, get) => ({
   setSearchPanelOpen: (open) => set({ searchPanelOpen: open }),
 
   scrollToNode: (nodeId) => {
-    // ツリービューの場合、ノードまでの親を全て展開する
     const { lawTree, expandedNodes, viewMode } = get()
     if (viewMode === 'tree') {
       const path = findNodePath(lawTree, nodeId)
@@ -231,7 +258,6 @@ export const useLawStore = create<LawStore>((set, get) => ({
         set({ expandedNodes: next, expandLevel: null })
       }
     }
-    // スクロールはコンポーネント側でDOMを使って行う
     requestAnimationFrame(() => {
       const el = document.getElementById(`law-node-${nodeId}`)
       el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
