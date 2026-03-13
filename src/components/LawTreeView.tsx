@@ -1,4 +1,6 @@
 import { useLawStore } from '../store/useLawStore'
+import { useTagStore, TAG_COLORS } from '../store/useTagStore'
+import { TagPicker } from './TagPicker'
 import type { LawTreeNode, LawNodeType } from '../types/law'
 
 const INDENT_PX = 20
@@ -7,17 +9,35 @@ const STRUCTURAL_TYPES: LawNodeType[] = [
   'part', 'chapter', 'section', 'subsection', 'division', 'suppl_provision',
 ]
 
+const TAGGABLE_TYPES: LawNodeType[] = [
+  'article', 'paragraph', 'item',
+]
+
+function getTagBgClass(lawId: string | null, nodeId: string): string {
+  if (!lawId) return ''
+  const tags = useTagStore.getState().getNodeTags(lawId, nodeId)
+  if (tags.length === 0) return ''
+  const color = TAG_COLORS.find((c) => c.id === tags[0])
+  return color ? `${color.bg} border-l-2 ${color.border}` : ''
+}
+
 function TreeNode({ node }: { node: LawTreeNode }) {
-  const { expandedNodes, toggleNode } = useLawStore()
+  const { expandedNodes, toggleNode, selectedLawId } = useLawStore()
+  const activeFilter = useTagStore((s) => s.activeFilter)
+  const tags = useTagStore((s) => selectedLawId ? s.tags[selectedLawId]?.[node.id] : undefined)
   const hasChildren = node.children.length > 0
   const isExpanded = expandedNodes.has(node.id)
   const isStructural = STRUCTURAL_TYPES.includes(node.type)
+  const isTaggable = TAGGABLE_TYPES.includes(node.type)
 
-  // タイトルの組み立て
+  // フィルタ: activeFilterが設定されている場合、タグのないノードを薄く表示
+  const dimmed = activeFilter && (!tags || !tags.includes(activeFilter))
+  const tagBg = getTagBgClass(selectedLawId, node.id)
+
   let displayTitle = node.title
   if (!displayTitle) {
     if (node.type === 'paragraph' && node.num === '1') {
-      displayTitle = '' // 第1項はタイトル省略
+      displayTitle = ''
     } else if (node.type === 'toc') {
       displayTitle = '目次'
     } else if (node.type === 'preamble') {
@@ -25,15 +45,14 @@ function TreeNode({ node }: { node: LawTreeNode }) {
     }
   }
 
-  // 項のインラインコンテンツ表示
   const showInline = node.type === 'paragraph' || node.type === 'item' || node.type === 'subitem'
 
   return (
     <div id={`law-node-${node.id}`} style={{ paddingLeft: node.depth * INDENT_PX }}>
       <div
-        className={`flex items-start gap-1 py-0.5 ${
-          hasChildren ? 'cursor-pointer hover:bg-gray-50 rounded' : ''
-        }`}
+        className={`flex items-start gap-1 py-0.5 group rounded ${
+          hasChildren ? 'cursor-pointer hover:bg-gray-50' : ''
+        } ${tagBg} ${dimmed ? 'opacity-30' : ''}`}
         onClick={() => hasChildren && toggleNode(node.id)}
       >
         {hasChildren ? (
@@ -66,6 +85,7 @@ function TreeNode({ node }: { node: LawTreeNode }) {
             </p>
           )}
         </div>
+        {isTaggable && <TagPicker nodeId={node.id} />}
       </div>
       {isExpanded &&
         node.children.map((child) => (

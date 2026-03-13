@@ -1,8 +1,14 @@
 import { useLawStore } from '../store/useLawStore'
+import { useTagStore, TAG_COLORS } from '../store/useTagStore'
+import { TagPicker } from './TagPicker'
 import type { LawTreeNode, LawNodeType } from '../types/law'
 
 const STRUCTURAL_TYPES: LawNodeType[] = [
   'part', 'chapter', 'section', 'subsection', 'division', 'suppl_provision',
+]
+
+const TAGGABLE_TYPES: LawNodeType[] = [
+  'article', 'paragraph', 'item',
 ]
 
 const DEPTH_STYLES: Record<number, string> = {
@@ -25,15 +31,29 @@ function flattenNodes(nodes: LawTreeNode[]): LawTreeNode[] {
   return result
 }
 
+function getTagBgClass(lawId: string | null, nodeId: string): string {
+  if (!lawId) return ''
+  const tags = useTagStore.getState().getNodeTags(lawId, nodeId)
+  if (tags.length === 0) return ''
+  const color = TAG_COLORS.find((c) => c.id === tags[0])
+  return color ? `${color.bg} border-l-2 ${color.border} pl-2` : ''
+}
+
 function OutlineNode({ node }: { node: LawTreeNode }) {
+  const selectedLawId = useLawStore((s) => s.selectedLawId)
+  const activeFilter = useTagStore((s) => s.activeFilter)
+  const tags = useTagStore((s) => selectedLawId ? s.tags[selectedLawId]?.[node.id] : undefined)
   const isStructural = STRUCTURAL_TYPES.includes(node.type)
+  const isTaggable = TAGGABLE_TYPES.includes(node.type)
+  const dimmed = activeFilter && (!tags || !tags.includes(activeFilter))
+  const tagBg = getTagBgClass(selectedLawId, node.id)
 
   if (node.type === 'toc') return null
 
   if (isStructural) {
     const style = DEPTH_STYLES[node.depth] ?? 'text-sm font-medium text-gray-600 mt-2'
     return (
-      <div id={`law-node-${node.id}`} className={style}>
+      <div id={`law-node-${node.id}`} className={`${style} ${dimmed ? 'opacity-30' : ''}`}>
         {node.title}
       </div>
     )
@@ -41,11 +61,14 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
 
   if (node.type === 'article') {
     return (
-      <div id={`law-node-${node.id}`} className="mt-3 mb-1">
-        <span className="text-sm font-semibold text-gray-800">{node.title}</span>
-        {node.content && (
-          <p className="text-sm text-gray-600 mt-0.5 leading-relaxed">{node.content}</p>
-        )}
+      <div id={`law-node-${node.id}`} className={`mt-3 mb-1 group flex items-start gap-1 ${tagBg} ${dimmed ? 'opacity-30' : ''}`}>
+        <div className="flex-1">
+          <span className="text-sm font-semibold text-gray-800">{node.title}</span>
+          {node.content && (
+            <p className="text-sm text-gray-600 mt-0.5 leading-relaxed">{node.content}</p>
+          )}
+        </div>
+        {isTaggable && <TagPicker nodeId={node.id} />}
       </div>
     )
   }
@@ -53,29 +76,31 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
   if (node.type === 'paragraph') {
     const title = node.title
     return (
-      <div id={`law-node-${node.id}`} className="mt-0.5">
-        <span className="text-sm text-gray-600 leading-relaxed">
+      <div id={`law-node-${node.id}`} className={`mt-0.5 group flex items-start gap-1 ${tagBg} ${dimmed ? 'opacity-30' : ''}`}>
+        <span className="text-sm text-gray-600 leading-relaxed flex-1">
           {title && <span className="font-medium mr-1">{title}</span>}
           {node.content}
         </span>
+        {isTaggable && <TagPicker nodeId={node.id} />}
       </div>
     )
   }
 
   if (node.type === 'item' || node.type === 'subitem') {
     return (
-      <div id={`law-node-${node.id}`} className="ml-4 mt-0.5">
-        <span className="text-sm text-gray-600">
+      <div id={`law-node-${node.id}`} className={`ml-4 mt-0.5 group flex items-start gap-1 ${tagBg} ${dimmed ? 'opacity-30' : ''}`}>
+        <span className="text-sm text-gray-600 flex-1">
           {node.title && <span className="font-medium mr-1">{node.title}</span>}
           {node.content}
         </span>
+        {isTaggable && <TagPicker nodeId={node.id} />}
       </div>
     )
   }
 
   if (node.type === 'preamble' && node.content) {
     return (
-      <div id={`law-node-${node.id}`} className="mt-3 mb-2">
+      <div id={`law-node-${node.id}`} className={`mt-3 mb-2 ${dimmed ? 'opacity-30' : ''}`}>
         <p className="text-sm text-gray-600 leading-relaxed">{node.content}</p>
       </div>
     )

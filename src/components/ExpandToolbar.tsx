@@ -1,4 +1,5 @@
 import { useLawStore } from '../store/useLawStore'
+import { useTagStore, TAG_COLORS } from '../store/useTagStore'
 import { EXPAND_LEVELS } from '../types/law'
 
 export function ExpandToolbar() {
@@ -7,11 +8,12 @@ export function ExpandToolbar() {
     viewMode, setViewMode,
     tocVisible, setTocVisible,
   } = useLawStore()
+  const { activeFilter, setActiveFilter } = useTagStore()
 
   if (lawTree.length === 0) return null
 
   return (
-    <div className="flex items-center gap-1 px-3 py-2 border-b border-gray-200 bg-gray-50">
+    <div className="flex items-center gap-1 px-3 py-2 border-b border-gray-200 bg-gray-50 flex-wrap">
       {/* 展開レベル（ツリービュー時のみ） */}
       {viewMode === 'tree' && (
         <>
@@ -44,6 +46,28 @@ export function ExpandToolbar() {
       >
         目次
       </button>
+
+      {/* タグフィルタ */}
+      <div className="w-px h-4 bg-gray-300 mx-2" />
+      <span className="text-xs text-gray-500 mr-1">タグ:</span>
+      {TAG_COLORS.map((color) => (
+        <button
+          key={color.id}
+          onClick={() => setActiveFilter(activeFilter === color.id ? null : color.id)}
+          className={`w-4 h-4 rounded-full ${color.dot} ${
+            activeFilter === color.id ? 'ring-2 ring-offset-1 ring-gray-400' : ''
+          } hover:scale-110 transition-transform`}
+          title={`${color.label}でフィルタ`}
+        />
+      ))}
+      {activeFilter && (
+        <button
+          onClick={() => setActiveFilter(null)}
+          className="text-xs text-gray-400 hover:text-gray-600 ml-1"
+        >
+          解除
+        </button>
+      )}
 
       <div className="flex-1" />
 
