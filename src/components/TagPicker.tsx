@@ -30,7 +30,7 @@ export function TagPicker({ nodeId }: TagPickerProps) {
     : null
 
   return (
-    <div ref={ref} className="flex-shrink-0 relative self-stretch" style={{ width: 0, overflow: 'visible' }}>
+    <div ref={ref} className={`flex-shrink-0 relative self-stretch ${open ? 'z-50' : ''}`} style={{ width: 0, overflow: 'visible' }}>
       <button
         onClick={(e) => { e.stopPropagation(); setOpen(!open) }}
         className={`absolute w-3 h-3 rounded-full transition-opacity ${

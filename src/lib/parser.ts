@@ -1,4 +1,4 @@
-import type { LawElement, LawTreeNode, LawNodeType } from '../types/law'
+import type { LawElement, LawTreeNode, LawNodeType, RichSegment } from '../types/law'
 
 const TAG_TO_NODE_TYPE: Record<string, LawNodeType> = {
   Law: 'law',
@@ -62,9 +62,11 @@ function parseChildren(element: LawElement, parentPath: string, depth: number): 
 
 function parseNode(element: LawElement, type: LawNodeType, parentPath: string, depth: number): LawTreeNode {
   const id = buildId(element, parentPath)
-  const title = extractTitle(element)
+  const richTitle = extractRichTitle(element)
+  const richContent = extractRichContent(element)
+  const title = richToPlain(richTitle)
   const num = extractNum(element)
-  const content = extractContent(element)
+  const content = richToPlain(richContent)
   const children = parseChildren(element, id, depth + 1)
 
   return {
@@ -73,55 +75,15 @@ function parseNode(element: LawElement, type: LawNodeType, parentPath: string, d
     title,
     num,
     content,
+    richTitle,
+    richContent,
     children,
     depth,
   }
 }
 
-function extractTitle(element: LawElement): string {
-  if (element.tag === 'Article') {
-    const titleEl = findChild(element, 'ArticleTitle')
-    const caption = findChild(element, 'ArticleCaption')
-    const parts: string[] = []
-    if (titleEl) parts.push(extractText(titleEl))
-    if (caption) parts.push(extractText(caption))
-    return parts.join('')
-  }
-
-  if (element.tag === 'Paragraph') {
-    const numEl = findChild(element, 'ParagraphNum')
-    if (numEl) {
-      const text = extractText(numEl)
-      return text || ''
-    }
-    return ''
-  }
-
-  if (element.tag === 'Item') {
-    const titleEl = findChild(element, 'ItemTitle')
-    if (titleEl) return extractText(titleEl)
-    return ''
-  }
-
-  if (element.tag.startsWith('Subitem')) {
-    const titleEl = findChild(element, `${element.tag}Title`)
-    if (titleEl) return extractText(titleEl)
-    return ''
-  }
-
-  const titleTag = TITLE_TAGS[element.tag]
-  if (titleTag) {
-    const titleEl = findChild(element, titleTag)
-    if (titleEl) return extractText(titleEl)
-  }
-
-  const label = findChild(element, 'SupplProvisionLabel')
-  if (label) return extractText(label)
-
-  const tocLabel = findChild(element, 'TOCLabel')
-  if (tocLabel) return extractText(tocLabel)
-
-  return ''
+function richToPlain(segments: RichSegment[]): string {
+  return segments.map(s => typeof s === 'string' ? s : s.rb).join('')
 }
 
 function extractNum(element: LawElement): string {
@@ -132,23 +94,80 @@ function extractNum(element: LawElement): string {
   return ''
 }
 
-function extractContent(element: LawElement): string {
-  const parts: string[] = []
+function extractRichText(element: LawElement): RichSegment[] {
+  const segments: RichSegment[] = []
+  for (const child of element.children) {
+    if (typeof child === 'string') {
+      segments.push(child)
+    } else if (child.tag === 'Ruby') {
+      const base = extractText(child)
+      const rtEl = findChild(child, 'Rt')
+      const reading = rtEl ? extractText(rtEl) : ''
+      segments.push(reading ? { rb: base, rt: reading } : base)
+    } else if (child.tag !== 'Rt') {
+      segments.push(...extractRichText(child))
+    }
+  }
+  return segments
+}
 
+function extractRichTitle(element: LawElement): RichSegment[] {
+  if (element.tag === 'Article') {
+    const titleEl = findChild(element, 'ArticleTitle')
+    const caption = findChild(element, 'ArticleCaption')
+    const segments: RichSegment[] = []
+    if (titleEl) segments.push(...extractRichText(titleEl))
+    if (caption) segments.push(...extractRichText(caption))
+    return segments
+  }
+
+  if (element.tag === 'Paragraph') {
+    const numEl = findChild(element, 'ParagraphNum')
+    if (numEl) return extractRichText(numEl)
+    return []
+  }
+
+  if (element.tag === 'Item') {
+    const titleEl = findChild(element, 'ItemTitle')
+    if (titleEl) return extractRichText(titleEl)
+    return []
+  }
+
+  if (element.tag.startsWith('Subitem')) {
+    const titleEl = findChild(element, `${element.tag}Title`)
+    if (titleEl) return extractRichText(titleEl)
+    return []
+  }
+
+  const titleTag = TITLE_TAGS[element.tag]
+  if (titleTag) {
+    const titleEl = findChild(element, titleTag)
+    if (titleEl) return extractRichText(titleEl)
+  }
+
+  const label = findChild(element, 'SupplProvisionLabel')
+  if (label) return extractRichText(label)
+
+  const tocLabel = findChild(element, 'TOCLabel')
+  if (tocLabel) return extractRichText(tocLabel)
+
+  return []
+}
+
+function extractRichContent(element: LawElement): RichSegment[] {
+  const segments: RichSegment[] = []
   for (const child of element.children) {
     if (typeof child === 'string') continue
-
     if (
       child.tag === 'ParagraphSentence' ||
       child.tag === 'ItemSentence' ||
       child.tag === 'PreambleSentence' ||
       /^Subitem\d+Sentence$/.test(child.tag)
     ) {
-      parts.push(extractText(child))
+      segments.push(...extractRichText(child))
     }
   }
-
-  return parts.join('')
+  return segments
 }
 
 function extractText(element: LawElement): string {

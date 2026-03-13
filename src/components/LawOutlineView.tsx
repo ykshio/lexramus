@@ -1,8 +1,7 @@
 import { useLawStore } from '../store/useLawStore'
 import { useTagStore, TAG_COLORS } from '../store/useTagStore'
 import { TagPicker } from './TagPicker'
-import { convertToArabic } from '../lib/kansuji'
-import { highlightText } from '../lib/highlight'
+import { RubyText } from '../lib/rubyText'
 import type { LawTreeNode, LawNodeType } from '../types/law'
 
 const STRUCTURAL_TYPES: LawNodeType[] = [
@@ -53,8 +52,7 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
   const isTaggable = TAGGABLE_TYPES.includes(node.type)
   const dimmed = activeFilter && (!tags || !tags.includes(activeFilter))
   const tagBg = getTagBgClass(selectedLawId, node.id)
-  const t = (s: string) => useArabicNum ? convertToArabic(s) : s
-  const h = (s: string) => textSearchQuery ? highlightText(s, textSearchQuery) : s
+  const sq = textSearchQuery || undefined
   const isSearchMatch = textSearchResultIds.includes(node.id)
   const isActiveSearchResult = isSearchMatch && textSearchResultIds[textSearchActiveIndex] === node.id
   const searchHighlight = isActiveSearchResult
@@ -69,7 +67,7 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
     const style = DEPTH_STYLES[node.depth] ?? 'text-sm font-medium text-gray-600 mt-2'
     return (
       <div id={`law-node-${node.id}`} className={`${style} ${searchHighlight} ${dimmed ? 'opacity-30' : ''}`}>
-        {h(t(node.title))}
+        <RubyText segments={node.richTitle} searchQuery={sq} arabicNum={useArabicNum} />
       </div>
     )
   }
@@ -79,9 +77,13 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
       <div id={`law-node-${node.id}`} className={`mt-3 mb-1 group flex items-start gap-1 ${tagBg} ${searchHighlight} ${dimmed ? 'opacity-30' : ''}`}>
         {isTaggable && <TagPicker nodeId={node.id} />}
         <div className="flex-1">
-          <span className="text-sm font-semibold text-gray-800">{h(t(node.title))}</span>
-          {node.content && (
-            <p className="text-sm text-gray-600 mt-0.5 leading-relaxed">{h(node.content)}</p>
+          <span className="text-sm font-semibold text-gray-800">
+            <RubyText segments={node.richTitle} searchQuery={sq} arabicNum={useArabicNum} />
+          </span>
+          {node.richContent.length > 0 && (
+            <p className="text-sm text-gray-600 mt-0.5 leading-relaxed">
+              <RubyText segments={node.richContent} searchQuery={sq} />
+            </p>
           )}
         </div>
       </div>
@@ -89,46 +91,50 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
   }
 
   if (node.type === 'paragraph') {
-    const title = node.title
+    const hasTitle = node.richTitle.length > 0
     return (
       <div id={`law-node-${node.id}`} className={`ml-4 mt-0.5 group flex items-start gap-1 ${tagBg} ${searchHighlight} ${dimmed ? 'opacity-30' : ''}`}>
         {isTaggable && <TagPicker nodeId={node.id} />}
         <div className="flex items-baseline gap-0 text-sm text-gray-600 leading-relaxed flex-1">
-          {title && <span className="shrink-0 font-medium">{h(title)}</span>}
-          {node.content && <span>{title ? '\u3000' : ''}{h(node.content)}</span>}
+          {hasTitle && <span className="shrink-0 font-medium"><RubyText segments={node.richTitle} searchQuery={sq} /></span>}
+          {node.richContent.length > 0 && <span>{hasTitle ? '\u3000' : ''}<RubyText segments={node.richContent} searchQuery={sq} /></span>}
         </div>
       </div>
     )
   }
 
   if (node.type === 'item') {
+    const hasTitle = node.richTitle.length > 0
     return (
       <div id={`law-node-${node.id}`} className={`ml-4 mt-0.5 group flex items-start gap-1 ${tagBg} ${searchHighlight} ${dimmed ? 'opacity-30' : ''}`}>
         {isTaggable && <TagPicker nodeId={node.id} />}
         <div className="flex items-baseline gap-0 text-sm text-gray-600 flex-1">
-          {node.title && <span className="shrink-0 font-medium">{h(node.title)}</span>}
-          {node.content && <span>{node.title ? '\u3000' : ''}{h(node.content)}</span>}
+          {hasTitle && <span className="shrink-0 font-medium"><RubyText segments={node.richTitle} searchQuery={sq} /></span>}
+          {node.richContent.length > 0 && <span>{hasTitle ? '\u3000' : ''}<RubyText segments={node.richContent} searchQuery={sq} /></span>}
         </div>
       </div>
     )
   }
 
   if (node.type === 'subitem') {
+    const hasTitle = node.richTitle.length > 0
     return (
       <div id={`law-node-${node.id}`} className={`ml-8 mt-0.5 group flex items-start gap-1 ${tagBg} ${searchHighlight} ${dimmed ? 'opacity-30' : ''}`}>
         {isTaggable && <TagPicker nodeId={node.id} />}
         <div className="flex items-baseline gap-0 text-sm text-gray-600 flex-1">
-          {node.title && <span className="shrink-0 font-medium">{h(node.title)}</span>}
-          {node.content && <span>{node.title ? '\u3000' : ''}{h(node.content)}</span>}
+          {hasTitle && <span className="shrink-0 font-medium"><RubyText segments={node.richTitle} searchQuery={sq} /></span>}
+          {node.richContent.length > 0 && <span>{hasTitle ? '\u3000' : ''}<RubyText segments={node.richContent} searchQuery={sq} /></span>}
         </div>
       </div>
     )
   }
 
-  if (node.type === 'preamble' && node.content) {
+  if (node.type === 'preamble' && node.richContent.length > 0) {
     return (
       <div id={`law-node-${node.id}`} className={`mt-3 mb-2 ${searchHighlight} ${dimmed ? 'opacity-30' : ''}`}>
-        <p className="text-sm text-gray-600 leading-relaxed">{h(node.content)}</p>
+        <p className="text-sm text-gray-600 leading-relaxed">
+          <RubyText segments={node.richContent} searchQuery={sq} />
+        </p>
       </div>
     )
   }

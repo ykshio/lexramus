@@ -1,8 +1,7 @@
 import { useLawStore } from '../store/useLawStore'
 import { useTagStore, TAG_COLORS } from '../store/useTagStore'
 import { TagPicker } from './TagPicker'
-import { convertToArabic } from '../lib/kansuji'
-import { highlightText } from '../lib/highlight'
+import { RubyText } from '../lib/rubyText'
 import type { LawTreeNode, LawNodeType } from '../types/law'
 
 const INDENT_PX = 20
@@ -39,19 +38,17 @@ function TreeNode({ node }: { node: LawTreeNode }) {
   const isSearchMatch = textSearchResultIds.includes(node.id)
   const isActiveSearchResult = isSearchMatch && textSearchResultIds[textSearchActiveIndex] === node.id
 
-  let displayTitle = node.title
-  if (!displayTitle) {
-    if (node.type === 'paragraph' && node.num === '1') {
-      displayTitle = ''
-    } else if (node.type === 'toc') {
-      displayTitle = '目次'
+  // ルビ付きタイトル（特殊フォールバック対応）
+  let richTitle = node.richTitle
+  const hasTitle = node.title.length > 0 || richTitle.length > 0
+  if (!hasTitle) {
+    if (node.type === 'toc') {
+      richTitle = ['目次']
     } else if (node.type === 'preamble') {
-      displayTitle = '前文'
+      richTitle = ['前文']
     }
   }
-  if (useArabicNum && displayTitle) {
-    displayTitle = convertToArabic(displayTitle)
-  }
+  const showTitle = richTitle.length > 0 && !(node.type === 'paragraph' && node.num === '1' && !node.title)
 
   const showInline = node.type === 'paragraph' || node.type === 'item' || node.type === 'subitem'
 
@@ -80,21 +77,21 @@ function TreeNode({ node }: { node: LawTreeNode }) {
         <div className="min-w-0 flex-1">
           {showInline ? (
             <div className="flex items-baseline gap-0">
-              {displayTitle && (
+              {showTitle && (
                 <span className="shrink-0 text-sm font-medium text-gray-700">
-                  {textSearchQuery ? highlightText(displayTitle, textSearchQuery) : displayTitle}
+                  <RubyText segments={richTitle} searchQuery={textSearchQuery} arabicNum={useArabicNum} />
                 </span>
               )}
-              {node.content && (
+              {node.richContent.length > 0 && (
                 <span className="text-sm text-gray-600">
-                  {displayTitle ? '\u3000' : ''}
-                  {textSearchQuery ? highlightText(node.content, textSearchQuery) : node.content}
+                  {showTitle ? '\u3000' : ''}
+                  <RubyText segments={node.richContent} searchQuery={textSearchQuery} arabicNum={useArabicNum} />
                 </span>
               )}
             </div>
           ) : (
             <>
-              {displayTitle && (
+              {showTitle && (
                 <span
                   className={`text-sm ${
                     isStructural
@@ -102,12 +99,12 @@ function TreeNode({ node }: { node: LawTreeNode }) {
                       : 'font-medium text-gray-700'
                   }`}
                 >
-                  {textSearchQuery ? highlightText(displayTitle, textSearchQuery) : displayTitle}
+                  <RubyText segments={richTitle} searchQuery={textSearchQuery} arabicNum={useArabicNum} />
                 </span>
               )}
-              {node.content && (
+              {node.richContent.length > 0 && (
                 <p className="text-sm text-gray-600 mt-0.5 leading-relaxed">
-                  {textSearchQuery ? highlightText(node.content, textSearchQuery) : node.content}
+                  <RubyText segments={node.richContent} searchQuery={textSearchQuery} arabicNum={useArabicNum} />
                 </p>
               )}
             </>

@@ -99,6 +99,9 @@ export interface LawRevisionsResponse {
   revisions: RevisionInfo[]
 }
 
+// ルビ付きテキストセグメント
+export type RichSegment = string | { rb: string; rt: string }
+
 // アプリ内部で使用する法令ツリーノード
 export interface LawTreeNode {
   id: string
@@ -106,6 +109,8 @@ export interface LawTreeNode {
   title: string
   num: string
   content: string
+  richTitle: RichSegment[]
+  richContent: RichSegment[]
   children: LawTreeNode[]
   depth: number
 }
