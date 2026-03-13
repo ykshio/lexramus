@@ -9,10 +9,22 @@ const NODE_CENTER = 18
 const MIN_NODE_WIDTH = 80
 const MAX_NODE_WIDTH = 500
 const NODE_CHROME = 24 // padding
+const CONNECTOR_GAP = 36 // 16px (parent→branch) + 20px (branch→child)
 
 const STRUCTURAL_TYPES: LawNodeType[] = [
   'part', 'chapter', 'section', 'subsection', 'division', 'suppl_provision',
 ]
+
+// タイプのカラム順序（法令構造の階層順）
+const FULL_COLUMN_ORDER = [
+  'part', 'chapter', 'section', 'subsection', 'division',
+  'article', 'paragraph', 'item', 'subitem',
+]
+
+interface ColumnInfo {
+  order: string[]
+  widths: number[]
+}
 
 // Canvas でテキスト幅を計測
 let measureCtx: CanvasRenderingContext2D | null = null
@@ -27,29 +39,64 @@ function getTextWidth(text: string, bold: boolean): number {
   return measureCtx.measureText(text).width
 }
 
-// ツリー全体でdepthごとの最大ノード幅を計算
-function calculateDepthWidths(nodes: LawTreeNode[]): Map<number, number> {
-  const maxByDepth = new Map<number, number>()
+function getNodeDisplayText(node: LawTreeNode): string {
+  const showInline = node.type === 'paragraph' || node.type === 'item' || node.type === 'subitem'
+  return showInline && node.title && node.content
+    ? `${node.title}\u3000${node.content}`
+    : node.title || node.content || '...'
+}
 
-  function walk(node: LawTreeNode) {
-    const showInline = node.type === 'paragraph' || node.type === 'item' || node.type === 'subitem'
-    const displayText = showInline && node.title && node.content
-      ? `${node.title}\u3000${node.content}`
-      : node.title || node.content.slice(0, 40) || '...'
-    const isStructural = STRUCTURAL_TYPES.includes(node.type)
-    const w = getTextWidth(displayText, isStructural)
-    const cur = maxByDepth.get(node.depth) ?? 0
-    if (w > cur) maxByDepth.set(node.depth, w)
-    for (const child of node.children) walk(child)
+// ノードのタイプからカラムインデックスを取得
+function getColumnIndex(type: string, order: string[]): number {
+  if (type === 'suppl_provision') return 0
+  return order.indexOf(type)
+}
+
+// ツリー全体でタイプ別のカラム幅を計算
+function calculateColumnInfo(nodes: LawTreeNode[]): ColumnInfo {
+  // 第1パス: 存在するタイプを収集
+  const existingTypes = new Set<string>()
+  function collectTypes(node: LawTreeNode) {
+    if (FULL_COLUMN_ORDER.includes(node.type)) existingTypes.add(node.type)
+    for (const child of node.children) collectTypes(child)
   }
+  for (const n of nodes) collectTypes(n)
 
-  for (const n of nodes) walk(n)
+  const order = FULL_COLUMN_ORDER.filter(t => existingTypes.has(t))
 
-  const widths = new Map<number, number>()
-  for (const [depth, maxW] of maxByDepth) {
-    widths.set(depth, Math.max(MIN_NODE_WIDTH, Math.min(MAX_NODE_WIDTH, Math.ceil(maxW + NODE_CHROME))))
+  // 第2パス: カラムごとの最大テキスト幅を計算
+  const maxByCol = new Array(order.length).fill(0)
+  function calcWidths(node: LawTreeNode) {
+    const col = getColumnIndex(node.type, order)
+    if (col >= 0 && col < order.length) {
+      const displayText = getNodeDisplayText(node)
+      const isStr = STRUCTURAL_TYPES.includes(node.type)
+      const w = getTextWidth(displayText, isStr)
+      maxByCol[col] = Math.max(maxByCol[col], w)
+    }
+    for (const child of node.children) calcWidths(child)
   }
-  return widths
+  for (const n of nodes) calcWidths(n)
+
+  const widths = maxByCol.map(w =>
+    Math.max(MIN_NODE_WIDTH, Math.min(MAX_NODE_WIDTH, Math.ceil(w + NODE_CHROME)))
+  )
+
+  return { order, widths }
+}
+
+// 親→子間のスキップされたカラム分のスペーサー幅を計算
+function calculateSpacerWidth(parentType: string, childType: string, info: ColumnInfo): number {
+  const parentCol = getColumnIndex(parentType, info.order)
+  const childCol = getColumnIndex(childType, info.order)
+
+  if (parentCol < 0 || childCol < 0 || childCol <= parentCol + 1) return 0
+
+  let spacer = 0
+  for (let c = parentCol + 1; c < childCol; c++) {
+    spacer += info.widths[c] + CONNECTOR_GAP
+  }
+  return spacer
 }
 
 function getNodeTagBg(lawId: string | null, nodeId: string): string {
@@ -87,13 +134,28 @@ function DiagramNode({ node, width }: { node: LawTreeNode; width: number }) {
   const showInline = node.type === 'paragraph' || node.type === 'item' || node.type === 'subitem'
   const displayText = showInline && displayTitle && node.content
     ? `${displayTitle}\u3000${node.content}`
-    : displayTitle || (node.content ? node.content.slice(0, 40) : '...')
+    : displayTitle || node.content || '...'
 
   const searchHighlight = isActiveSearchResult
     ? 'ring-2 ring-amber-400 bg-amber-100'
     : isSearchMatch
       ? 'ring-1 ring-amber-200 bg-amber-50'
       : ''
+
+  const handleClick = () => {
+    if (hasChildren) {
+      toggleNode(node.id)
+    } else if (node.content) {
+      setTextExpanded(!textExpanded)
+    }
+  }
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    if (node.content) {
+      e.stopPropagation()
+      setTextExpanded(!textExpanded)
+    }
+  }
 
   return (
     <div
@@ -108,19 +170,11 @@ function DiagramNode({ node, width }: { node: LawTreeNode; width: number }) {
         ${searchHighlight}
       `}
       style={textExpanded ? { minWidth: `${width}px`, maxWidth: '600px' } : { width: `${width}px` }}
-      title={!textExpanded ? (showInline && displayTitle && node.content ? `${displayTitle}\u3000${node.content}` : displayTitle || node.content.slice(0, 100)) : undefined}
+      title={!textExpanded ? displayText : undefined}
+      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
     >
-      <span
-        className={`${textExpanded ? '' : 'truncate'} flex-1`}
-        onClick={(e) => {
-          if (!isStructural && (node.content || displayText.length > 20)) {
-            e.stopPropagation()
-            setTextExpanded(!textExpanded)
-          } else if (hasChildren) {
-            toggleNode(node.id)
-          }
-        }}
-      >
+      <span className={`${textExpanded ? '' : 'truncate'} flex-1`}>
         {textSearchQuery ? highlightText(displayText, textSearchQuery) : displayText}
       </span>
       {hasChildren && (
@@ -130,10 +184,6 @@ function DiagramNode({ node, width }: { node: LawTreeNode; width: number }) {
           viewBox="0 0 24 24"
           stroke="currentColor"
           strokeWidth={2}
-          onClick={(e) => {
-            e.stopPropagation()
-            toggleNode(node.id)
-          }}
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
         </svg>
@@ -142,13 +192,14 @@ function DiagramNode({ node, width }: { node: LawTreeNode; width: number }) {
   )
 }
 
-function BranchConnector({ index, total }: { index: number; total: number }) {
+function BranchConnector({ index, total, extraWidth = 0 }: { index: number; total: number; extraWidth?: number }) {
   const isFirst = index === 0
   const isLast = index === total - 1
   const isOnly = total === 1
+  const totalWidth = 20 + extraWidth
 
   return (
-    <div className="relative shrink-0" style={{ width: '20px', minHeight: '36px' }}>
+    <div className="relative shrink-0" style={{ width: `${totalWidth}px`, minHeight: '36px' }}>
       {/* 縦線 */}
       {!isOnly && (
         <div
@@ -183,11 +234,12 @@ function BranchConnector({ index, total }: { index: number; total: number }) {
   )
 }
 
-function TreeBranch({ node, depthWidths }: { node: LawTreeNode; depthWidths: Map<number, number> }) {
+function TreeBranch({ node, columnInfo }: { node: LawTreeNode; columnInfo: ColumnInfo }) {
   const expandedNodes = useLawStore((s) => s.expandedNodes)
   const hasChildren = node.children.length > 0
   const isExpanded = expandedNodes.has(node.id)
-  const width = depthWidths.get(node.depth) ?? MIN_NODE_WIDTH
+  const col = getColumnIndex(node.type, columnInfo.order)
+  const width = col >= 0 ? columnInfo.widths[col] : MIN_NODE_WIDTH
 
   return (
     <div className="flex items-start">
@@ -207,12 +259,15 @@ function TreeBranch({ node, depthWidths }: { node: LawTreeNode; depthWidths: Map
 
           {/* 分岐カラム */}
           <div className="flex flex-col">
-            {node.children.map((child, i, arr) => (
-              <div key={child.id} className="flex items-stretch">
-                <BranchConnector index={i} total={arr.length} />
-                <TreeBranch node={child} depthWidths={depthWidths} />
-              </div>
-            ))}
+            {node.children.map((child, i, arr) => {
+              const spacer = calculateSpacerWidth(node.type, child.type, columnInfo)
+              return (
+                <div key={child.id} className="flex items-stretch">
+                  <BranchConnector index={i} total={arr.length} extraWidth={spacer} />
+                  <TreeBranch node={child} columnInfo={columnInfo} />
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
@@ -285,7 +340,7 @@ export function LawDiagramView() {
     )
   }
 
-  const depthWidths = calculateDepthWidths(lawTree)
+  const columnInfo = calculateColumnInfo(lawTree)
 
   return (
     <div ref={scrollRef} className="flex-1 overflow-auto p-6">
@@ -298,7 +353,7 @@ export function LawDiagramView() {
       >
         {lawTree.map((node) => (
           <div key={node.id} className="mb-4">
-            <TreeBranch node={node} depthWidths={depthWidths} />
+            <TreeBranch node={node} columnInfo={columnInfo} />
           </div>
         ))}
       </div>
