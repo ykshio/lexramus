@@ -128,6 +128,7 @@ export type LawNodeType =
   | 'item'       // 号
   | 'subitem'    // 号の細分
   | 'suppl_provision' // 附則
+  | 'suppl_group'     // 附則グループ
   | 'toc'        // 目次
   | 'preamble'   // 前文
   | 'unknown'

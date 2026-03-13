@@ -1,7 +1,14 @@
 @import "tailwindcss";
 
+ruby {
+  display: ruby;
+}
 rt {
+  display: ruby-text;
   font-size: 0.6em;
   font-weight: normal;
   color: inherit;
+}
+rp {
+  display: none;
 }

@@ -40,7 +40,8 @@ export function parseLawFullText(element: LawElement): LawTreeNode[] {
   const lawBody = findChild(element, 'LawBody')
   if (!lawBody) return []
 
-  return parseChildren(lawBody, '', 0)
+  const nodes = parseChildren(lawBody, '', 0)
+  return groupSupplProvisions(nodes)
 }
 
 function parseChildren(element: LawElement, parentPath: string, depth: number): LawTreeNode[] {
@@ -204,6 +205,27 @@ function isStructuralTag(tag: string): boolean {
     'AppdxFig',
     'Appdx',
   ].includes(tag)
+}
+
+function groupSupplProvisions(nodes: LawTreeNode[]): LawTreeNode[] {
+  const supplNodes = nodes.filter(n => n.type === 'suppl_provision')
+  if (supplNodes.length <= 1) return nodes
+
+  const group: LawTreeNode = {
+    id: 'suppl_group',
+    type: 'suppl_group',
+    title: '附則',
+    num: '',
+    content: '',
+    richTitle: ['附則'],
+    richContent: [],
+    children: supplNodes,
+    depth: 0,
+  }
+
+  const result = nodes.filter(n => n.type !== 'suppl_provision')
+  result.push(group)
+  return result
 }
 
 let counter = 0
