@@ -1,6 +1,7 @@
 import { useLawStore } from '../store/useLawStore'
 import { useTagStore, TAG_COLORS } from '../store/useTagStore'
 import { EXPAND_LEVELS } from '../types/law'
+import type { LawNodeType } from '../types/law'
 
 const ZOOM_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3]
 
@@ -96,7 +97,7 @@ export function ExpandToolbar() {
             <div className="w-px h-4 bg-gray-300 mx-1" />
             <span className="text-xs text-gray-500 mr-0.5">展開:</span>
             {EXPAND_LEVELS.map((level) => {
-              const exists = level.type === 'all' || availableTypes.has(level.type)
+              const exists = level.type === 'all' || availableTypes.has(level.type as LawNodeType)
               return (
                 <button
                   key={level.type}
@@ -166,7 +167,7 @@ export function ExpandToolbar() {
         <div className="md:hidden flex items-center gap-1 px-3 py-1 border-t border-gray-100 overflow-x-auto">
           <span className="text-xs text-gray-500 mr-0.5 flex-shrink-0">展開:</span>
           {EXPAND_LEVELS.map((level) => {
-            const exists = availableTypes.has(level.type)
+            const exists = level.type === 'all' || availableTypes.has(level.type as LawNodeType)
             return (
               <button
                 key={level.type}

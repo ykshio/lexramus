@@ -162,11 +162,11 @@ function resolveExpandLevel(targetType: ExpandLevel, availableTypes: Set<LawNode
   if (idx < 0) return targetType
 
   // 指定レベルが存在すればそのまま
-  if (availableTypes.has(targetType)) return targetType
+  if (availableTypes.has(targetType as LawNodeType)) return targetType
 
   // 上のレベルへフォールバック
   for (let i = idx - 1; i >= 0; i--) {
-    if (availableTypes.has(LEVEL_FALLBACK_ORDER[i])) {
+    if (availableTypes.has(LEVEL_FALLBACK_ORDER[i] as LawNodeType)) {
       return LEVEL_FALLBACK_ORDER[i]
     }
   }
