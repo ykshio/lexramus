@@ -383,7 +383,7 @@ export const useLawStore = create<LawStore>((set, get) => ({
 
   scrollToNode: (nodeId) => {
     const { lawTree, expandedNodes, viewMode } = get()
-    if (viewMode === 'list') {
+    if (viewMode === 'list' || viewMode === 'diagram') {
       const path = findNodePath(lawTree, nodeId)
       if (path) {
         const next = new Set(expandedNodes)
