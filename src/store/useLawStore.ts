@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { LawTreeNode, RevisionInfo, LawInfo, ExpandLevel } from '../types/law'
 import type { LawType } from '../types/law'
-import { searchLaws, getLawData } from '../api/client'
+import { searchLaws, getLawData, getLawRevisions } from '../api/client'
 import { parseLawFullText } from '../lib/parser'
 
 interface SearchResult {
@@ -34,6 +34,11 @@ interface LawStore {
   expandedNodes: Set<string>
   tocVisible: boolean
 
+  // 時点指定
+  asof: string | null
+  revisions: RevisionInfo[]
+  revisionsLoading: boolean
+
   // アクション
   setSearchQuery: (query: string) => void
   setLawTypeFilter: (types: LawType[]) => void
@@ -44,6 +49,8 @@ interface LawStore {
   setViewMode: (mode: ViewMode) => void
   setTocVisible: (visible: boolean) => void
   scrollToNode: (nodeId: string) => void
+  setAsof: (date: string | null) => void
+  loadRevisions: () => Promise<void>
 }
 
 // ノードタイプの深さ順序
@@ -91,6 +98,10 @@ export const useLawStore = create<LawStore>((set, get) => ({
   expandedNodes: new Set(),
   tocVisible: false,
 
+  asof: null,
+  revisions: [],
+  revisionsLoading: false,
+
   setSearchQuery: (query) => set({ searchQuery: query }),
 
   setLawTypeFilter: (types) => set({ lawTypeFilter: types }),
@@ -123,6 +134,7 @@ export const useLawStore = create<LawStore>((set, get) => ({
   },
 
   selectLaw: async (lawId, title, lawNum) => {
+    const { asof } = get()
     set({
       selectedLawId: lawId,
       selectedLawTitle: title,
@@ -132,11 +144,11 @@ export const useLawStore = create<LawStore>((set, get) => ({
       lawTree: [],
       expandedNodes: new Set(),
       expandLevel: null,
+      revisions: [],
     })
     try {
-      const res = await getLawData(lawId)
+      const res = await getLawData(lawId, asof ?? undefined)
       const tree = parseLawFullText(res.law_full_text)
-      // デフォルトで章レベルまで展開
       const expanded = collectNodeIds(tree, 'chapter')
       set({
         lawTree: tree,
@@ -144,6 +156,8 @@ export const useLawStore = create<LawStore>((set, get) => ({
         expandedNodes: expanded,
         expandLevel: 'chapter',
       })
+      // 改正履歴をバックグラウンドで取得
+      get().loadRevisions()
     } catch (e) {
       set({
         lawError: e instanceof Error ? e.message : '法令の取得に失敗しました',
@@ -172,6 +186,27 @@ export const useLawStore = create<LawStore>((set, get) => ({
   setViewMode: (mode) => set({ viewMode: mode }),
 
   setTocVisible: (visible) => set({ tocVisible: visible }),
+
+  setAsof: (date) => {
+    set({ asof: date })
+    // 法令が選択されていれば再取得
+    const { selectedLawId, selectedLawTitle, selectedLawNum } = get()
+    if (selectedLawId && selectedLawTitle && selectedLawNum) {
+      get().selectLaw(selectedLawId, selectedLawTitle, selectedLawNum)
+    }
+  },
+
+  loadRevisions: async () => {
+    const { selectedLawId } = get()
+    if (!selectedLawId) return
+    set({ revisionsLoading: true })
+    try {
+      const res = await getLawRevisions(selectedLawId)
+      set({ revisions: res.revisions, revisionsLoading: false })
+    } catch {
+      set({ revisionsLoading: false })
+    }
+  },
 
   scrollToNode: (nodeId) => {
     // ツリービューの場合、ノードまでの親を全て展開する
