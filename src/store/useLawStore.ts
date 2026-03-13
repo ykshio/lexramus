@@ -112,15 +112,16 @@ function collectAvailableTypes(nodes: LawTreeNode[]): Set<LawNodeType> {
 function collectExpandedIds(nodes: LawTreeNode[], targetType: ExpandLevel): Set<string> {
   const ids = new Set<string>()
 
-  // 一覧: 目(division)の手前まで無条件で全展開（条は表示しない）
+  // 一覧: 条(article)より上の構造を展開（条の直接の親は展開しない）
   if (targetType === 'list') {
-    const divisionOrder = TYPE_ORDER['division'] ?? 99
+    const articleOrder = TYPE_ORDER['article'] ?? 99
     function walkList(node: LawTreeNode) {
       const nodeOrder = TYPE_ORDER[node.type] ?? 99
-      if (nodeOrder < divisionOrder && node.children.length > 0) {
-        ids.add(node.id)
-        for (const child of node.children) walkList(child)
-      }
+      if (nodeOrder >= articleOrder || node.children.length === 0) return
+      const hasArticle = node.children.some(c => c.type === 'article')
+      if (hasArticle) return
+      ids.add(node.id)
+      for (const child of node.children) walkList(child)
     }
     for (const node of nodes) walkList(node)
     return ids
