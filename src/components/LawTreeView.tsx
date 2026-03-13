@@ -20,7 +20,7 @@ function getTagBgClass(lawId: string | null, nodeId: string): string {
   const tags = useTagStore.getState().getNodeTags(lawId, nodeId)
   if (tags.length === 0) return ''
   const color = TAG_COLORS.find((c) => c.id === tags[0])
-  return color ? `${color.bg} border-l-2 ${color.border}` : ''
+  return color ? color.bg : ''
 }
 
 function TreeNode({ node }: { node: LawTreeNode }) {

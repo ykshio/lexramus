@@ -30,7 +30,7 @@ export function TagPicker({ nodeId }: TagPickerProps) {
     : null
 
   return (
-    <div ref={ref} className="flex-shrink-0 relative" style={{ width: 0, overflow: 'visible' }}>
+    <div ref={ref} className="flex-shrink-0 relative self-stretch" style={{ width: 0, overflow: 'visible' }}>
       <button
         onClick={(e) => { e.stopPropagation(); setOpen(!open) }}
         className={`absolute w-3 h-3 rounded-full transition-opacity ${
@@ -38,13 +38,13 @@ export function TagPicker({ nodeId }: TagPickerProps) {
             ? tagColor.dot
             : 'bg-gray-300 opacity-0 group-hover:opacity-100'
         }`}
-        style={{ right: '3px', top: '2px' }}
+        style={{ right: '3px', top: '50%', transform: 'translateY(-50%)' }}
         title="色タグ"
       />
       {open && (
         <div
           className="absolute z-50 bg-white border border-gray-200 rounded shadow-lg p-1.5 flex gap-1"
-          style={{ top: '18px', left: '-6px' }}
+          style={{ top: '100%', left: '-6px', marginTop: '2px' }}
         >
           {TAG_COLORS.map((color) => {
             const active = nodeTags.includes(color.id)
