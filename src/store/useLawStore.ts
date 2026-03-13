@@ -34,6 +34,9 @@ interface LawStore {
   expandedNodes: Set<string>
   tocVisible: boolean
 
+  // レスポンシブ
+  searchPanelOpen: boolean
+
   // 時点指定
   asof: string | null
   revisions: RevisionInfo[]
@@ -51,6 +54,7 @@ interface LawStore {
   scrollToNode: (nodeId: string) => void
   setAsof: (date: string | null) => void
   loadRevisions: () => Promise<void>
+  setSearchPanelOpen: (open: boolean) => void
 }
 
 // ノードタイプの深さ順序
@@ -97,6 +101,8 @@ export const useLawStore = create<LawStore>((set, get) => ({
   expandLevel: null,
   expandedNodes: new Set(),
   tocVisible: false,
+
+  searchPanelOpen: true,
 
   asof: null,
   revisions: [],
@@ -207,6 +213,8 @@ export const useLawStore = create<LawStore>((set, get) => ({
       set({ revisionsLoading: false })
     }
   },
+
+  setSearchPanelOpen: (open) => set({ searchPanelOpen: open }),
 
   scrollToNode: (nodeId) => {
     // ツリービューの場合、ノードまでの親を全て展開する
