@@ -32,7 +32,10 @@ function calculateSiblingWidth(children: LawTreeNode[]): number {
   let maxTextWidth = 0
 
   for (const child of children) {
-    const displayText = child.title || child.content.slice(0, 40) || '...'
+    const showInline = child.type === 'paragraph' || child.type === 'item' || child.type === 'subitem'
+    const displayText = showInline && child.title && child.content
+      ? `${child.title}\u3000${child.content}`
+      : child.title || child.content.slice(0, 40) || '...'
     const isStructural = STRUCTURAL_TYPES.includes(child.type)
     maxTextWidth = Math.max(maxTextWidth, getTextWidth(displayText, isStructural))
   }
@@ -71,7 +74,10 @@ function DiagramNode({ node, width }: { node: LawTreeNode; width: number }) {
     displayTitle = convertToArabic(displayTitle)
   }
 
-  const showContent = !isStructural && node.content && !displayTitle
+  const showInline = node.type === 'paragraph' || node.type === 'item' || node.type === 'subitem'
+  const displayText = showInline && displayTitle && node.content
+    ? `${displayTitle}\u3000${node.content}`
+    : displayTitle || (node.content ? node.content.slice(0, 40) : '...')
 
   const searchHighlight = isActiveSearchResult
     ? 'ring-2 ring-amber-400 bg-amber-100'
@@ -92,12 +98,10 @@ function DiagramNode({ node, width }: { node: LawTreeNode; width: number }) {
       `}
       style={{ width: `${width}px` }}
       onClick={() => hasChildren && toggleNode(node.id)}
-      title={displayTitle || node.content.slice(0, 100)}
+      title={showInline && displayTitle && node.content ? `${displayTitle}\u3000${node.content}` : displayTitle || node.content.slice(0, 100)}
     >
       <span className="truncate flex-1">
-        {textSearchQuery && displayTitle
-          ? highlightText(displayTitle, textSearchQuery)
-          : displayTitle || (showContent ? (textSearchQuery ? highlightText(node.content.slice(0, 40), textSearchQuery) : node.content.slice(0, 40)) : '...')}
+        {textSearchQuery ? highlightText(displayText, textSearchQuery) : displayText}
       </span>
       {hasChildren && (
         <svg
