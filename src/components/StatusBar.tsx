@@ -1,17 +1,11 @@
 import { useLawStore } from '../store/useLawStore'
 
 export function StatusBar() {
-  const { selectedLawTitle, selectedLawNum, asof, searchPanelOpen, setSearchPanelOpen } = useLawStore()
+  const { selectedLawTitle, selectedLawNum, asof } = useLawStore()
 
   return (
     <div className="px-3 py-1.5 border-t border-gray-200 bg-gray-50 text-xs text-gray-500 flex-shrink-0 flex items-center gap-2">
-      <button
-        onClick={() => setSearchPanelOpen(!searchPanelOpen)}
-        className="md:hidden text-gray-500 hover:text-gray-700"
-      >
-        {searchPanelOpen ? '✕' : '☰'}
-      </button>
-      <div className="flex-1">
+      <div className="flex-1 truncate">
         {selectedLawTitle ? (
           <span>
             {selectedLawTitle}（{selectedLawNum}）

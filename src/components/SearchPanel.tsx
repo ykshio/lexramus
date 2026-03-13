@@ -26,6 +26,7 @@ export function SearchPanel() {
     setLawTypeFilter,
     selectLaw,
     selectedLawId,
+    setSearchPanelOpen,
   } = useLawStore()
 
   const [showFilter, setShowFilter] = useState(false)
@@ -104,13 +105,15 @@ export function SearchPanel() {
         {searchResults.map((result) => (
           <button
             key={result.law_info.law_id}
-            onClick={() =>
+            onClick={() => {
               selectLaw(
                 result.law_info.law_id,
                 result.revision_info.law_title,
                 result.law_info.law_num,
               )
-            }
+              // モバイルでは選択後にパネルを閉じる
+              if (window.innerWidth < 768) setSearchPanelOpen(false)
+            }}
             className={`w-full text-left px-3 py-2 border-b border-gray-100 hover:bg-gray-50 ${
               selectedLawId === result.law_info.law_id ? 'bg-blue-50' : ''
             }`}

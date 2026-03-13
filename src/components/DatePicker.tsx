@@ -17,13 +17,13 @@ export function DatePicker() {
   }, [showRevisions])
 
   return (
-    <div ref={ref} className="relative flex items-center gap-2">
-      <label className="text-xs text-gray-500">時点:</label>
+    <div ref={ref} className="relative flex items-center gap-1 sm:gap-2">
+      <label className="text-xs text-gray-500 hidden sm:inline">時点:</label>
       <input
         type="date"
         value={asof ?? ''}
         onChange={(e) => setAsof(e.target.value || null)}
-        className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+        className="px-1.5 sm:px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 w-[130px] sm:w-auto"
       />
       {asof && (
         <button
@@ -42,7 +42,7 @@ export function DatePicker() {
         </button>
       )}
       {showRevisions && (
-        <div className="absolute right-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded shadow-lg w-80 max-h-64 overflow-y-auto">
+        <div className="absolute right-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded shadow-lg w-[min(320px,90vw)] max-h-64 overflow-y-auto">
           <div className="px-3 py-2 border-b border-gray-100 text-xs font-medium text-gray-600">
             改正履歴
           </div>
