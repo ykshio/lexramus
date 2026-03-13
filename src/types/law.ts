@@ -152,6 +152,7 @@ export const ERA_LABELS: Record<Era, string> = {
 
 // 展開レベルの定義
 export const EXPAND_LEVELS = [
+  { type: 'list' as const, label: '一覧' },
   { type: 'part' as const, label: '編' },
   { type: 'chapter' as const, label: '章' },
   { type: 'section' as const, label: '節' },

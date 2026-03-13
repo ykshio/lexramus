@@ -95,23 +95,25 @@ export function ExpandToolbar() {
         {viewMode !== 'outline' && (
           <div className="hidden md:flex items-center gap-1 ml-1 flex-shrink-0">
             <div className="w-px h-4 bg-gray-300 mx-1" />
-            <span className="text-xs text-gray-500 mr-0.5">展開:</span>
-            {EXPAND_LEVELS.map((level) => {
-              const exists = level.type === 'all' || availableTypes.has(level.type as LawNodeType)
+            {EXPAND_LEVELS.map((level, i) => {
+              const exists = level.type === 'all' || level.type === 'list' || availableTypes.has(level.type as LawNodeType)
+              const showSep = i > 0 && level.type === 'article'
               return (
-                <button
-                  key={level.type}
-                  onClick={() => setExpandLevel(level.type)}
-                  className={`px-2 py-0.5 text-xs rounded border flex-shrink-0 ${
-                    expandLevel === level.type
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : exists
-                        ? 'border-gray-300 text-gray-600 hover:bg-gray-100'
-                        : 'border-gray-200 text-gray-300 cursor-default'
-                  }`}
-                >
-                  {level.label}
-                </button>
+                <span key={level.type} className="flex items-center gap-1">
+                  {showSep && <span className="text-gray-300 text-xs select-none">|</span>}
+                  <button
+                    onClick={() => setExpandLevel(level.type)}
+                    className={`px-2 py-0.5 text-xs rounded border flex-shrink-0 ${
+                      expandLevel === level.type
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : exists
+                          ? 'border-gray-300 text-gray-600 hover:bg-gray-100'
+                          : 'border-gray-200 text-gray-300 cursor-default'
+                    }`}
+                  >
+                    {level.label}
+                  </button>
+                </span>
               )
             })}
           </div>
@@ -165,23 +167,25 @@ export function ExpandToolbar() {
       {/* 2行目: モバイルのみ - 展開レベル */}
       {viewMode !== 'outline' && (
         <div className="md:hidden flex items-center gap-1 px-3 py-1 border-t border-gray-100 overflow-x-auto">
-          <span className="text-xs text-gray-500 mr-0.5 flex-shrink-0">展開:</span>
-          {EXPAND_LEVELS.map((level) => {
-            const exists = level.type === 'all' || availableTypes.has(level.type as LawNodeType)
+          {EXPAND_LEVELS.map((level, i) => {
+            const exists = level.type === 'all' || level.type === 'list' || availableTypes.has(level.type as LawNodeType)
+            const showSep = i > 0 && level.type === 'article'
             return (
-              <button
-                key={level.type}
-                onClick={() => setExpandLevel(level.type)}
-                className={`px-2 py-0.5 text-xs rounded border flex-shrink-0 ${
-                  expandLevel === level.type
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : exists
-                      ? 'border-gray-300 text-gray-600 hover:bg-gray-100'
-                      : 'border-gray-200 text-gray-300 cursor-default'
-                }`}
-              >
-                {level.label}
-              </button>
+              <span key={level.type} className="flex items-center gap-1 flex-shrink-0">
+                {showSep && <span className="text-gray-300 text-xs select-none">|</span>}
+                <button
+                  onClick={() => setExpandLevel(level.type)}
+                  className={`px-2 py-0.5 text-xs rounded border flex-shrink-0 ${
+                    expandLevel === level.type
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : exists
+                        ? 'border-gray-300 text-gray-600 hover:bg-gray-100'
+                        : 'border-gray-200 text-gray-300 cursor-default'
+                  }`}
+                >
+                  {level.label}
+                </button>
+              </span>
             )
           })}
         </div>

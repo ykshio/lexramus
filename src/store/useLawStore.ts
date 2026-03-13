@@ -112,6 +112,20 @@ function collectAvailableTypes(nodes: LawTreeNode[]): Set<LawNodeType> {
 function collectExpandedIds(nodes: LawTreeNode[], targetType: ExpandLevel): Set<string> {
   const ids = new Set<string>()
 
+  // 一覧: 条(article)より上の階層を無条件で全展開
+  if (targetType === 'list') {
+    const articleOrder = TYPE_ORDER['article'] ?? 99
+    function walkList(node: LawTreeNode) {
+      const nodeOrder = TYPE_ORDER[node.type] ?? 99
+      if (nodeOrder < articleOrder && node.children.length > 0) {
+        ids.add(node.id)
+        for (const child of node.children) walkList(child)
+      }
+    }
+    for (const node of nodes) walkList(node)
+    return ids
+  }
+
   // 全展開: 子を持つ全ノードを展開
   if (targetType === 'all') {
     function walkAll(node: LawTreeNode) {
@@ -157,7 +171,7 @@ function collectExpandedIds(nodes: LawTreeNode[], targetType: ExpandLevel): Set<
 
 // 指定タイプが存在しない場合、1つ上のレベルにフォールバック
 function resolveExpandLevel(targetType: ExpandLevel, availableTypes: Set<LawNodeType>): ExpandLevel {
-  if (targetType === 'all') return 'all'
+  if (targetType === 'all' || targetType === 'list') return targetType
   const idx = LEVEL_FALLBACK_ORDER.indexOf(targetType)
   if (idx < 0) return targetType
 
