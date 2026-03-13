@@ -30,28 +30,19 @@ export function TagPicker({ nodeId }: TagPickerProps) {
     : null
 
   return (
-    <div ref={ref} className="relative inline-flex items-center flex-shrink-0 mt-1">
-      {/* メインのドットボタン: タグがあれば色付き、なければグレー（ホバーで表示） */}
+    <div ref={ref} className="relative inline-flex items-center flex-shrink-0 mt-1 w-4">
+      {/* ドットボタン: タグがあれば色付き、なければグレー（ホバーで表示） */}
       <button
         onClick={(e) => { e.stopPropagation(); setOpen(!open) }}
         className={`w-3 h-3 rounded-full flex-shrink-0 transition-opacity ${
           firstColor
-            ? `${firstColor.dot}`
+            ? `${firstColor.dot}${nodeTags.length > 1 ? ' ring-2 ring-offset-1 ring-gray-400' : ''}`
             : 'bg-gray-300 opacity-0 group-hover:opacity-100'
         }`}
-        title="色タグ"
+        title={nodeTags.length > 1
+          ? `色タグ (${nodeTags.map(id => TAG_COLORS.find(c => c.id === id)?.label).join(', ')})`
+          : '色タグ'}
       />
-      {/* 複数タグがある場合は追加のドット */}
-      {nodeTags.length > 1 && (
-        <span className="flex gap-0.5 ml-0.5">
-          {nodeTags.slice(1).map((colorId) => {
-            const color = TAG_COLORS.find((c) => c.id === colorId)
-            return color ? (
-              <span key={colorId} className={`w-2 h-2 rounded-full ${color.dot}`} />
-            ) : null
-          })}
-        </span>
-      )}
       {open && (
         <div className="absolute left-0 top-full mt-1 z-10 bg-white border border-gray-200 rounded shadow-lg p-1.5 flex gap-1">
           {TAG_COLORS.map((color) => {

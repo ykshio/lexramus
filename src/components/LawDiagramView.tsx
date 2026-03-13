@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useLawStore } from '../store/useLawStore'
 import { useTagStore, TAG_COLORS } from '../store/useTagStore'
+import { TagPicker } from './TagPicker'
 import { convertToArabic } from '../lib/kansuji'
 import { highlightText } from '../lib/highlight'
 import type { LawTreeNode, LawNodeType } from '../types/law'
@@ -99,21 +100,26 @@ function calculateSpacerWidth(parentType: string, childType: string, info: Colum
   return spacer
 }
 
-function getNodeTagBg(lawId: string | null, nodeId: string): string {
-  if (!lawId) return ''
+const TAGGABLE_TYPES: LawNodeType[] = [
+  'article', 'paragraph', 'item', 'subitem',
+]
+
+function getNodeTagStyle(lawId: string | null, nodeId: string): { bg: string; border: string } | null {
+  if (!lawId) return null
   const tags = useTagStore.getState().getNodeTags(lawId, nodeId)
-  if (tags.length === 0) return ''
+  if (tags.length === 0) return null
   const color = TAG_COLORS.find((c) => c.id === tags[0])
-  return color ? `${color.bg} border ${color.border}` : ''
+  return color ? { bg: color.bg, border: color.border } : null
 }
 
 function DiagramNode({ node, width }: { node: LawTreeNode; width: number }) {
   const { expandedNodes, toggleNode, selectedLawId, useArabicNum, textSearchQuery, textSearchResultIds, textSearchActiveIndex } = useLawStore()
   const [textExpanded, setTextExpanded] = useState(false)
   const isStructural = STRUCTURAL_TYPES.includes(node.type)
+  const isTaggable = TAGGABLE_TYPES.includes(node.type)
   const hasChildren = node.children.length > 0
   const isExpanded = expandedNodes.has(node.id)
-  const tagBg = getNodeTagBg(selectedLawId, node.id)
+  const tagStyle = getNodeTagStyle(selectedLawId, node.id)
   const isSearchMatch = textSearchResultIds.includes(node.id)
   const isActiveSearchResult = isSearchMatch && textSearchResultIds[textSearchActiveIndex] === node.id
 
@@ -157,16 +163,22 @@ function DiagramNode({ node, width }: { node: LawTreeNode; width: number }) {
     }
   }
 
+  const baseBg = tagStyle
+    ? `${tagStyle.bg} border ${tagStyle.border}`
+    : isStructural
+      ? 'bg-gray-100 border border-gray-200'
+      : 'bg-white border border-gray-200'
+
   return (
     <div
       id={`law-node-${node.id}`}
       className={`
-        px-2 py-1 rounded-lg text-xs cursor-pointer select-none
+        px-2 py-1 rounded-lg text-xs cursor-pointer select-none group
         transition-colors min-h-[36px] flex items-center gap-1
         ${textExpanded ? 'whitespace-normal' : 'truncate'}
-        ${isStructural ? 'font-semibold text-gray-800 bg-gray-100 border border-gray-200' : 'text-gray-600 bg-white border border-gray-200'}
-        hover:bg-gray-50
-        ${tagBg}
+        ${isStructural ? 'font-semibold text-gray-800' : 'text-gray-600'}
+        ${baseBg}
+        hover:brightness-95
         ${searchHighlight}
       `}
       style={textExpanded ? { minWidth: `${width}px`, maxWidth: '600px' } : { width: `${width}px` }}
@@ -174,6 +186,7 @@ function DiagramNode({ node, width }: { node: LawTreeNode; width: number }) {
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
     >
+      {isTaggable && <TagPicker nodeId={node.id} />}
       <span className={`${textExpanded ? '' : 'truncate'} flex-1`}>
         {textSearchQuery ? highlightText(displayText, textSearchQuery) : displayText}
       </span>

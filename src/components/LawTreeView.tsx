@@ -12,7 +12,7 @@ const STRUCTURAL_TYPES: LawNodeType[] = [
 ]
 
 const TAGGABLE_TYPES: LawNodeType[] = [
-  'article', 'paragraph', 'item',
+  'article', 'paragraph', 'item', 'subitem',
 ]
 
 function getTagBgClass(lawId: string | null, nodeId: string): string {
@@ -65,7 +65,7 @@ function TreeNode({ node }: { node: LawTreeNode }) {
     <div id={`law-node-${node.id}`} style={{ paddingLeft: node.depth * INDENT_PX }}>
       <div
         className={`flex items-start gap-1 py-0.5 group rounded ${
-          hasChildren ? 'cursor-pointer hover:bg-gray-50' : ''
+          hasChildren ? 'cursor-pointer hover:brightness-95' : ''
         } ${tagBg} ${dimmed ? 'opacity-30' : ''} ${searchHighlight}`}
         onClick={() => hasChildren && toggleNode(node.id)}
       >

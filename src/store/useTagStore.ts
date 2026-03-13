@@ -9,12 +9,12 @@ export interface TagColor {
 }
 
 export const TAG_COLORS: TagColor[] = [
-  { id: 'red', label: '赤', bg: 'bg-red-50', border: 'border-red-200', dot: 'bg-red-400' },
-  { id: 'orange', label: '橙', bg: 'bg-orange-50', border: 'border-orange-200', dot: 'bg-orange-400' },
-  { id: 'yellow', label: '黄', bg: 'bg-yellow-50', border: 'border-yellow-200', dot: 'bg-yellow-400' },
-  { id: 'green', label: '緑', bg: 'bg-green-50', border: 'border-green-200', dot: 'bg-green-400' },
-  { id: 'blue', label: '青', bg: 'bg-blue-50', border: 'border-blue-200', dot: 'bg-blue-400' },
-  { id: 'purple', label: '紫', bg: 'bg-purple-50', border: 'border-purple-200', dot: 'bg-purple-400' },
+  { id: 'red', label: '赤', bg: 'bg-red-100', border: 'border-red-300', dot: 'bg-red-400' },
+  { id: 'orange', label: '橙', bg: 'bg-orange-100', border: 'border-orange-300', dot: 'bg-orange-400' },
+  { id: 'yellow', label: '黄', bg: 'bg-yellow-100', border: 'border-yellow-300', dot: 'bg-yellow-400' },
+  { id: 'green', label: '緑', bg: 'bg-green-100', border: 'border-green-300', dot: 'bg-green-400' },
+  { id: 'blue', label: '青', bg: 'bg-blue-100', border: 'border-blue-300', dot: 'bg-blue-400' },
+  { id: 'purple', label: '紫', bg: 'bg-purple-100', border: 'border-purple-300', dot: 'bg-purple-400' },
 ]
 
 const STORAGE_KEY = 'lexramus-tags'

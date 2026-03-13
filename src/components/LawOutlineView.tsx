@@ -9,7 +9,7 @@ const STRUCTURAL_TYPES: LawNodeType[] = [
 ]
 
 const TAGGABLE_TYPES: LawNodeType[] = [
-  'article', 'paragraph', 'item',
+  'article', 'paragraph', 'item', 'subitem',
 ]
 
 const DEPTH_STYLES: Record<number, string> = {
