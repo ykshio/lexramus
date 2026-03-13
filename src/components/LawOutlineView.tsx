@@ -101,7 +101,7 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
             {node.richContent.length > 0 && <span>{'\u3000'}<RubyText segments={node.richContent} searchQuery={sq} /></span>}
           </div>
         ) : (
-          <div className="text-sm text-gray-600 leading-relaxed flex-1" style={{ paddingLeft: '2em' }}>
+          <div className="text-sm text-gray-600 leading-relaxed flex-1" style={{ paddingLeft: '1em', textIndent: '1em' }}>
             {node.richContent.length > 0 && <RubyText segments={node.richContent} searchQuery={sq} />}
           </div>
         )}
