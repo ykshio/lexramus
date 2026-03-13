@@ -178,7 +178,7 @@ function DiagramNode({ node, width }: { node: LawTreeNode; width: number }) {
         ${textExpanded ? 'whitespace-normal' : 'whitespace-nowrap overflow-visible'}
         ${isStructural ? 'font-semibold text-gray-800' : 'text-gray-600'}
         ${baseBg}
-        hover:brightness-95
+        hover:ring-1 hover:ring-inset hover:ring-gray-400
         ${searchHighlight}
       `}
       style={textExpanded ? { minWidth: `${width}px`, maxWidth: '600px' } : { width: `${width}px` }}
