@@ -157,7 +157,8 @@ function extractText(element: LawElement): string {
   for (const child of element.children) {
     if (typeof child === 'string') {
       parts.push(child)
-    } else {
+    } else if (child.tag !== 'Rt') {
+      // Rt(ふりがな)要素はスキップ
       parts.push(extractText(child))
     }
   }

@@ -9,7 +9,7 @@ import type { LawTreeNode, LawNodeType } from '../types/law'
 const NODE_CENTER = 18
 const MIN_NODE_WIDTH = 80
 const MAX_NODE_WIDTH = 500
-const NODE_CHROME = 24 // padding
+const NODE_CHROME = 40 // padding + gap + arrow
 const CONNECTOR_GAP = 36 // 16px (parent→branch) + 20px (branch→child)
 
 const STRUCTURAL_TYPES: LawNodeType[] = [

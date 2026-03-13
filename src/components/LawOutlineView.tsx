@@ -2,6 +2,7 @@ import { useLawStore } from '../store/useLawStore'
 import { useTagStore, TAG_COLORS } from '../store/useTagStore'
 import { TagPicker } from './TagPicker'
 import { convertToArabic } from '../lib/kansuji'
+import { highlightText } from '../lib/highlight'
 import type { LawTreeNode, LawNodeType } from '../types/law'
 
 const STRUCTURAL_TYPES: LawNodeType[] = [
@@ -43,6 +44,9 @@ function getTagBgClass(lawId: string | null, nodeId: string): string {
 function OutlineNode({ node }: { node: LawTreeNode }) {
   const selectedLawId = useLawStore((s) => s.selectedLawId)
   const useArabicNum = useLawStore((s) => s.useArabicNum)
+  const textSearchQuery = useLawStore((s) => s.textSearchQuery)
+  const textSearchResultIds = useLawStore((s) => s.textSearchResultIds)
+  const textSearchActiveIndex = useLawStore((s) => s.textSearchActiveIndex)
   const activeFilter = useTagStore((s) => s.activeFilter)
   const tags = useTagStore((s) => selectedLawId ? s.tags[selectedLawId]?.[node.id] : undefined)
   const isStructural = STRUCTURAL_TYPES.includes(node.type)
@@ -50,26 +54,34 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
   const dimmed = activeFilter && (!tags || !tags.includes(activeFilter))
   const tagBg = getTagBgClass(selectedLawId, node.id)
   const t = (s: string) => useArabicNum ? convertToArabic(s) : s
+  const h = (s: string) => textSearchQuery ? highlightText(s, textSearchQuery) : s
+  const isSearchMatch = textSearchResultIds.includes(node.id)
+  const isActiveSearchResult = isSearchMatch && textSearchResultIds[textSearchActiveIndex] === node.id
+  const searchHighlight = isActiveSearchResult
+    ? 'ring-2 ring-amber-400 bg-amber-100'
+    : isSearchMatch
+      ? 'ring-1 ring-amber-200'
+      : ''
 
   if (node.type === 'toc') return null
 
   if (isStructural) {
     const style = DEPTH_STYLES[node.depth] ?? 'text-sm font-medium text-gray-600 mt-2'
     return (
-      <div id={`law-node-${node.id}`} className={`${style} ${dimmed ? 'opacity-30' : ''}`}>
-        {t(node.title)}
+      <div id={`law-node-${node.id}`} className={`${style} ${searchHighlight} ${dimmed ? 'opacity-30' : ''}`}>
+        {h(t(node.title))}
       </div>
     )
   }
 
   if (node.type === 'article') {
     return (
-      <div id={`law-node-${node.id}`} className={`mt-3 mb-1 group flex items-start gap-1 ${tagBg} ${dimmed ? 'opacity-30' : ''}`}>
+      <div id={`law-node-${node.id}`} className={`mt-3 mb-1 group flex items-start gap-1 ${tagBg} ${searchHighlight} ${dimmed ? 'opacity-30' : ''}`}>
         {isTaggable && <TagPicker nodeId={node.id} />}
         <div className="flex-1">
-          <span className="text-sm font-semibold text-gray-800">{t(node.title)}</span>
+          <span className="text-sm font-semibold text-gray-800">{h(t(node.title))}</span>
           {node.content && (
-            <p className="text-sm text-gray-600 mt-0.5 leading-relaxed">{node.content}</p>
+            <p className="text-sm text-gray-600 mt-0.5 leading-relaxed">{h(node.content)}</p>
           )}
         </div>
       </div>
@@ -79,23 +91,35 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
   if (node.type === 'paragraph') {
     const title = node.title
     return (
-      <div id={`law-node-${node.id}`} className={`mt-0.5 group flex items-start gap-1 ${tagBg} ${dimmed ? 'opacity-30' : ''}`}>
+      <div id={`law-node-${node.id}`} className={`ml-4 mt-0.5 group flex items-start gap-1 ${tagBg} ${searchHighlight} ${dimmed ? 'opacity-30' : ''}`}>
         {isTaggable && <TagPicker nodeId={node.id} />}
         <div className="flex items-baseline gap-0 text-sm text-gray-600 leading-relaxed flex-1">
-          {title && <span className="shrink-0 font-medium">{title}</span>}
-          {node.content && <span>{title ? '\u3000' : ''}{node.content}</span>}
+          {title && <span className="shrink-0 font-medium">{h(title)}</span>}
+          {node.content && <span>{title ? '\u3000' : ''}{h(node.content)}</span>}
         </div>
       </div>
     )
   }
 
-  if (node.type === 'item' || node.type === 'subitem') {
+  if (node.type === 'item') {
     return (
-      <div id={`law-node-${node.id}`} className={`ml-4 mt-0.5 group flex items-start gap-1 ${tagBg} ${dimmed ? 'opacity-30' : ''}`}>
+      <div id={`law-node-${node.id}`} className={`ml-4 mt-0.5 group flex items-start gap-1 ${tagBg} ${searchHighlight} ${dimmed ? 'opacity-30' : ''}`}>
         {isTaggable && <TagPicker nodeId={node.id} />}
         <div className="flex items-baseline gap-0 text-sm text-gray-600 flex-1">
-          {node.title && <span className="shrink-0 font-medium">{node.title}</span>}
-          {node.content && <span>{node.title ? '\u3000' : ''}{node.content}</span>}
+          {node.title && <span className="shrink-0 font-medium">{h(node.title)}</span>}
+          {node.content && <span>{node.title ? '\u3000' : ''}{h(node.content)}</span>}
+        </div>
+      </div>
+    )
+  }
+
+  if (node.type === 'subitem') {
+    return (
+      <div id={`law-node-${node.id}`} className={`ml-8 mt-0.5 group flex items-start gap-1 ${tagBg} ${searchHighlight} ${dimmed ? 'opacity-30' : ''}`}>
+        {isTaggable && <TagPicker nodeId={node.id} />}
+        <div className="flex items-baseline gap-0 text-sm text-gray-600 flex-1">
+          {node.title && <span className="shrink-0 font-medium">{h(node.title)}</span>}
+          {node.content && <span>{node.title ? '\u3000' : ''}{h(node.content)}</span>}
         </div>
       </div>
     )
@@ -103,8 +127,8 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
 
   if (node.type === 'preamble' && node.content) {
     return (
-      <div id={`law-node-${node.id}`} className={`mt-3 mb-2 ${dimmed ? 'opacity-30' : ''}`}>
-        <p className="text-sm text-gray-600 leading-relaxed">{node.content}</p>
+      <div id={`law-node-${node.id}`} className={`mt-3 mb-2 ${searchHighlight} ${dimmed ? 'opacity-30' : ''}`}>
+        <p className="text-sm text-gray-600 leading-relaxed">{h(node.content)}</p>
       </div>
     )
   }
