@@ -96,7 +96,7 @@ export function ExpandToolbar() {
             <div className="w-px h-4 bg-gray-300 mx-1" />
             <span className="text-xs text-gray-500 mr-0.5">展開:</span>
             {EXPAND_LEVELS.map((level) => {
-              const exists = availableTypes.has(level.type)
+              const exists = level.type === 'all' || availableTypes.has(level.type)
               return (
                 <button
                   key={level.type}

@@ -111,6 +111,17 @@ function collectAvailableTypes(nodes: LawTreeNode[]): Set<LawNodeType> {
 // 指定タイプのノード自体は展開しない（子は見えない）
 function collectExpandedIds(nodes: LawTreeNode[], targetType: ExpandLevel): Set<string> {
   const ids = new Set<string>()
+
+  // 全展開: 子を持つ全ノードを展開
+  if (targetType === 'all') {
+    function walkAll(node: LawTreeNode) {
+      if (node.children.length > 0) ids.add(node.id)
+      for (const child of node.children) walkAll(child)
+    }
+    for (const node of nodes) walkAll(node)
+    return ids
+  }
+
   const targetOrder = TYPE_ORDER[targetType] ?? 99
 
   function walk(node: LawTreeNode): boolean {
@@ -146,6 +157,7 @@ function collectExpandedIds(nodes: LawTreeNode[], targetType: ExpandLevel): Set<
 
 // 指定タイプが存在しない場合、1つ上のレベルにフォールバック
 function resolveExpandLevel(targetType: ExpandLevel, availableTypes: Set<LawNodeType>): ExpandLevel {
+  if (targetType === 'all') return 'all'
   const idx = LEVEL_FALLBACK_ORDER.indexOf(targetType)
   if (idx < 0) return targetType
 

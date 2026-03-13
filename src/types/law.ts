@@ -156,6 +156,7 @@ export const EXPAND_LEVELS = [
   { type: 'paragraph' as const, label: '項' },
   { type: 'item' as const, label: '号' },
   { type: 'subitem' as const, label: 'イロハ' },
+  { type: 'all' as const, label: '全' },
 ] as const
 
 export type ExpandLevel = (typeof EXPAND_LEVELS)[number]['type']
