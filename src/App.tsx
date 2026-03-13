@@ -1,9 +1,14 @@
 import { SearchPanel } from './components/SearchPanel'
 import { ExpandToolbar } from './components/ExpandToolbar'
 import { LawTreeView } from './components/LawTreeView'
+import { LawOutlineView } from './components/LawOutlineView'
+import { TocPanel } from './components/TocPanel'
 import { StatusBar } from './components/StatusBar'
+import { useLawStore } from './store/useLawStore'
 
 function App() {
+  const viewMode = useLawStore((s) => s.viewMode)
+
   return (
     <div className="h-screen flex flex-col bg-white">
       <div className="flex flex-1 overflow-hidden">
@@ -12,11 +17,14 @@ function App() {
           <SearchPanel />
         </div>
 
+        {/* 目次パネル */}
+        <TocPanel />
+
         {/* メインエリア */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <ExpandToolbar />
           <div className="flex-1 overflow-y-auto">
-            <LawTreeView />
+            {viewMode === 'tree' ? <LawTreeView /> : <LawOutlineView />}
           </div>
         </div>
       </div>

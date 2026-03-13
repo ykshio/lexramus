@@ -29,7 +29,7 @@ function TreeNode({ node }: { node: LawTreeNode }) {
   const showInline = node.type === 'paragraph' || node.type === 'item' || node.type === 'subitem'
 
   return (
-    <div style={{ paddingLeft: node.depth * INDENT_PX }}>
+    <div id={`law-node-${node.id}`} style={{ paddingLeft: node.depth * INDENT_PX }}>
       <div
         className={`flex items-start gap-1 py-0.5 ${
           hasChildren ? 'cursor-pointer hover:bg-gray-50 rounded' : ''

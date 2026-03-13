@@ -9,6 +9,8 @@ interface SearchResult {
   revision_info: RevisionInfo
 }
 
+export type ViewMode = 'tree' | 'outline'
+
 interface LawStore {
   // 検索
   searchQuery: string
@@ -27,8 +29,10 @@ interface LawStore {
   lawError: string | null
 
   // 表示設定
+  viewMode: ViewMode
   expandLevel: ExpandLevel | null
   expandedNodes: Set<string>
+  tocVisible: boolean
 
   // アクション
   setSearchQuery: (query: string) => void
@@ -37,6 +41,9 @@ interface LawStore {
   selectLaw: (lawId: string, title: string, lawNum: string) => Promise<void>
   setExpandLevel: (level: ExpandLevel) => void
   toggleNode: (nodeId: string) => void
+  setViewMode: (mode: ViewMode) => void
+  setTocVisible: (visible: boolean) => void
+  scrollToNode: (nodeId: string) => void
 }
 
 // ノードタイプの深さ順序
@@ -79,8 +86,10 @@ export const useLawStore = create<LawStore>((set, get) => ({
   lawLoading: false,
   lawError: null,
 
+  viewMode: 'tree',
   expandLevel: null,
   expandedNodes: new Set(),
+  tocVisible: false,
 
   setSearchQuery: (query) => set({ searchQuery: query }),
 
@@ -159,4 +168,37 @@ export const useLawStore = create<LawStore>((set, get) => ({
     }
     set({ expandedNodes: next, expandLevel: null })
   },
+
+  setViewMode: (mode) => set({ viewMode: mode }),
+
+  setTocVisible: (visible) => set({ tocVisible: visible }),
+
+  scrollToNode: (nodeId) => {
+    // ツリービューの場合、ノードまでの親を全て展開する
+    const { lawTree, expandedNodes, viewMode } = get()
+    if (viewMode === 'tree') {
+      const path = findNodePath(lawTree, nodeId)
+      if (path) {
+        const next = new Set(expandedNodes)
+        for (const n of path) {
+          next.add(n.id)
+        }
+        set({ expandedNodes: next, expandLevel: null })
+      }
+    }
+    // スクロールはコンポーネント側でDOMを使って行う
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`law-node-${nodeId}`)
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
+  },
 }))
+
+function findNodePath(nodes: LawTreeNode[], targetId: string): LawTreeNode[] | null {
+  for (const node of nodes) {
+    if (node.id === targetId) return [node]
+    const childPath = findNodePath(node.children, targetId)
+    if (childPath) return [node, ...childPath]
+  }
+  return null
+}
