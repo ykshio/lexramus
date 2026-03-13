@@ -55,6 +55,7 @@ function TreeNode({ node }: { node: LawTreeNode }) {
         } ${tagBg} ${dimmed ? 'opacity-30' : ''}`}
         onClick={() => hasChildren && toggleNode(node.id)}
       >
+        {isTaggable && <TagPicker nodeId={node.id} />}
         {hasChildren ? (
           <span className="text-xs text-gray-400 mt-1 w-4 flex-shrink-0 select-none">
             {isExpanded ? '▼' : '▶'}
@@ -85,7 +86,6 @@ function TreeNode({ node }: { node: LawTreeNode }) {
             </p>
           )}
         </div>
-        {isTaggable && <TagPicker nodeId={node.id} />}
       </div>
       {isExpanded &&
         node.children.map((child) => (

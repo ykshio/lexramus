@@ -62,13 +62,15 @@ const LEVEL_ORDER: ExpandLevel[] = [
   'part', 'chapter', 'section', 'subsection', 'division', 'article', 'paragraph',
 ]
 
+// 指定レベルまで展開し、それより深い階層は閉じる
 function collectNodeIds(nodes: LawTreeNode[], upToLevel: ExpandLevel): Set<string> {
   const ids = new Set<string>()
   const levelIndex = LEVEL_ORDER.indexOf(upToLevel)
 
   function walk(node: LawTreeNode) {
     const nodeIndex = LEVEL_ORDER.indexOf(node.type as ExpandLevel)
-    if (nodeIndex !== -1 && nodeIndex <= levelIndex) {
+    // 指定レベルより浅い階層のみ展開（指定レベル自体は表示されるが展開しない）
+    if (nodeIndex !== -1 && nodeIndex < levelIndex) {
       ids.add(node.id)
     }
     for (const child of node.children) {

@@ -16,17 +16,14 @@ function App() {
   const asof = useLawStore((s) => s.asof)
   const searchPanelOpen = useLawStore((s) => s.searchPanelOpen)
 
-  // 初回: URLからstate復元
   useEffect(() => {
     syncUrlToState()
   }, [])
 
-  // state変更時にURL更新
   useEffect(() => {
     updateUrl()
   }, [selectedLawId, asof])
 
-  // キーボードショートカット
   useEffect(() => {
     return setupKeyboardShortcuts()
   }, [])
@@ -34,11 +31,12 @@ function App() {
   return (
     <div className="h-screen flex flex-col bg-white">
       {/* ヘッダー */}
-      {selectedLawId && (
-        <div className="flex items-center justify-end px-3 py-2 border-b border-gray-200 bg-white">
-          <DatePicker />
-        </div>
-      )}
+      <div className="flex items-center px-3 py-2 border-b border-gray-200 bg-white">
+        <img src={import.meta.env.BASE_URL + 'icon.png'} alt="LexRamus" className="w-6 h-6 mr-2" />
+        <span className="text-sm font-semibold text-gray-800 mr-4">LexRamus</span>
+        <div className="flex-1" />
+        {selectedLawId && <DatePicker />}
+      </div>
 
       <div className="flex flex-1 overflow-hidden">
         {/* 検索パネル（モバイルではトグル） */}

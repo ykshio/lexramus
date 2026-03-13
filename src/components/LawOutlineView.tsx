@@ -62,13 +62,13 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
   if (node.type === 'article') {
     return (
       <div id={`law-node-${node.id}`} className={`mt-3 mb-1 group flex items-start gap-1 ${tagBg} ${dimmed ? 'opacity-30' : ''}`}>
+        {isTaggable && <TagPicker nodeId={node.id} />}
         <div className="flex-1">
           <span className="text-sm font-semibold text-gray-800">{node.title}</span>
           {node.content && (
             <p className="text-sm text-gray-600 mt-0.5 leading-relaxed">{node.content}</p>
           )}
         </div>
-        {isTaggable && <TagPicker nodeId={node.id} />}
       </div>
     )
   }
@@ -77,11 +77,11 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
     const title = node.title
     return (
       <div id={`law-node-${node.id}`} className={`mt-0.5 group flex items-start gap-1 ${tagBg} ${dimmed ? 'opacity-30' : ''}`}>
+        {isTaggable && <TagPicker nodeId={node.id} />}
         <span className="text-sm text-gray-600 leading-relaxed flex-1">
           {title && <span className="font-medium mr-1">{title}</span>}
           {node.content}
         </span>
-        {isTaggable && <TagPicker nodeId={node.id} />}
       </div>
     )
   }
@@ -89,11 +89,11 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
   if (node.type === 'item' || node.type === 'subitem') {
     return (
       <div id={`law-node-${node.id}`} className={`ml-4 mt-0.5 group flex items-start gap-1 ${tagBg} ${dimmed ? 'opacity-30' : ''}`}>
+        {isTaggable && <TagPicker nodeId={node.id} />}
         <span className="text-sm text-gray-600 flex-1">
           {node.title && <span className="font-medium mr-1">{node.title}</span>}
           {node.content}
         </span>
-        {isTaggable && <TagPicker nodeId={node.id} />}
       </div>
     )
   }
