@@ -2,6 +2,7 @@ import { useLawStore } from '../store/useLawStore'
 import { useTagStore, TAG_COLORS } from '../store/useTagStore'
 import { TagPicker } from './TagPicker'
 import { convertToArabic } from '../lib/kansuji'
+import { highlightText } from '../lib/highlight'
 import type { LawTreeNode, LawNodeType } from '../types/law'
 
 const INDENT_PX = 20
@@ -23,7 +24,7 @@ function getTagBgClass(lawId: string | null, nodeId: string): string {
 }
 
 function TreeNode({ node }: { node: LawTreeNode }) {
-  const { expandedNodes, toggleNode, selectedLawId, useArabicNum } = useLawStore()
+  const { expandedNodes, toggleNode, selectedLawId, useArabicNum, textSearchQuery, textSearchResultIds, textSearchActiveIndex } = useLawStore()
   const activeFilter = useTagStore((s) => s.activeFilter)
   const tags = useTagStore((s) => selectedLawId ? s.tags[selectedLawId]?.[node.id] : undefined)
   const hasChildren = node.children.length > 0
@@ -31,9 +32,12 @@ function TreeNode({ node }: { node: LawTreeNode }) {
   const isStructural = STRUCTURAL_TYPES.includes(node.type)
   const isTaggable = TAGGABLE_TYPES.includes(node.type)
 
-  // フィルタ: activeFilterが設定されている場合、タグのないノードを薄く表示
   const dimmed = activeFilter && (!tags || !tags.includes(activeFilter))
   const tagBg = getTagBgClass(selectedLawId, node.id)
+
+  // テキスト検索ハイライト
+  const isSearchMatch = textSearchResultIds.includes(node.id)
+  const isActiveSearchResult = isSearchMatch && textSearchResultIds[textSearchActiveIndex] === node.id
 
   let displayTitle = node.title
   if (!displayTitle) {
@@ -51,12 +55,18 @@ function TreeNode({ node }: { node: LawTreeNode }) {
 
   const showInline = node.type === 'paragraph' || node.type === 'item' || node.type === 'subitem'
 
+  const searchHighlight = isActiveSearchResult
+    ? 'bg-amber-100 ring-2 ring-amber-400 rounded'
+    : isSearchMatch
+      ? 'bg-amber-50 ring-1 ring-amber-200 rounded'
+      : ''
+
   return (
     <div id={`law-node-${node.id}`} style={{ paddingLeft: node.depth * INDENT_PX }}>
       <div
         className={`flex items-start gap-1 py-0.5 group rounded ${
           hasChildren ? 'cursor-pointer hover:bg-gray-50' : ''
-        } ${tagBg} ${dimmed ? 'opacity-30' : ''}`}
+        } ${tagBg} ${dimmed ? 'opacity-30' : ''} ${searchHighlight}`}
         onClick={() => hasChildren && toggleNode(node.id)}
       >
         {isTaggable && <TagPicker nodeId={node.id} />}
@@ -76,17 +86,18 @@ function TreeNode({ node }: { node: LawTreeNode }) {
                   : 'font-medium text-gray-700'
               }`}
             >
-              {displayTitle}
+              {textSearchQuery ? highlightText(displayTitle, textSearchQuery) : displayTitle}
             </span>
           )}
           {showInline && node.content && (
             <span className="text-sm text-gray-600">
-              {displayTitle ? '\u3000' : ''}{node.content}
+              {displayTitle ? '\u3000' : ''}
+              {textSearchQuery ? highlightText(node.content, textSearchQuery) : node.content}
             </span>
           )}
           {!showInline && node.content && (
             <p className="text-sm text-gray-600 mt-0.5 leading-relaxed">
-              {node.content}
+              {textSearchQuery ? highlightText(node.content, textSearchQuery) : node.content}
             </p>
           )}
         </div>

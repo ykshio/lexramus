@@ -3,6 +3,8 @@ import { SearchPanel } from './components/SearchPanel'
 import { ExpandToolbar } from './components/ExpandToolbar'
 import { LawTreeView } from './components/LawTreeView'
 import { LawOutlineView } from './components/LawOutlineView'
+import { LawDiagramView } from './components/LawDiagramView'
+import { LawSearchBar } from './components/LawSearchBar'
 import { TocPanel } from './components/TocPanel'
 import { DatePicker } from './components/DatePicker'
 import { StatusBar } from './components/StatusBar'
@@ -33,10 +35,11 @@ function App() {
     <div className="h-screen flex flex-col bg-white">
       {/* ヘッダー */}
       <div className="flex items-center px-3 py-2 border-b border-gray-200 bg-white gap-2 flex-shrink-0">
-        {/* モバイル: 検索パネルトグル */}
+        {/* 検索パネルトグル（モバイル・デスクトップ共通） */}
         <button
           onClick={() => setSearchPanelOpen(!searchPanelOpen)}
-          className="md:hidden text-gray-500 hover:text-gray-700 text-lg w-7 h-7 flex items-center justify-center"
+          className="text-gray-500 hover:text-gray-700 text-lg w-7 h-7 flex items-center justify-center"
+          title="検索パネルの表示/非表示"
         >
           {searchPanelOpen ? '✕' : '☰'}
         </button>
@@ -47,7 +50,7 @@ function App() {
       </div>
 
       <div className="flex flex-1 overflow-hidden relative">
-        {/* モバイル: オーバーレイ背景 */}
+        {/* オーバーレイ背景（モバイルのみ） */}
         {searchPanelOpen && (
           <div
             className="md:hidden fixed inset-0 bg-black/30 z-10"
@@ -58,7 +61,6 @@ function App() {
         {/* 検索パネル */}
         <div className={`
           ${searchPanelOpen ? 'translate-x-0' : '-translate-x-full'}
-          md:translate-x-0
           fixed md:relative z-20 md:z-0
           w-72 flex-shrink-0 h-full bg-white
           transition-transform duration-200 ease-in-out
@@ -73,9 +75,14 @@ function App() {
         {/* メインエリア */}
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           <ExpandToolbar />
-          <div className="flex-1 overflow-y-auto">
-            {viewMode === 'tree' ? <LawTreeView /> : <LawOutlineView />}
-          </div>
+          <LawSearchBar />
+          {viewMode === 'diagram' ? (
+            <LawDiagramView />
+          ) : (
+            <div className="flex-1 overflow-y-auto">
+              {viewMode === 'list' ? <LawTreeView /> : <LawOutlineView />}
+            </div>
+          )}
         </div>
       </div>
 

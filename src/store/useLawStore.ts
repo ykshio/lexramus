@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { LawTreeNode, RevisionInfo, LawInfo, ExpandLevel } from '../types/law'
+import type { LawTreeNode, LawNodeType, RevisionInfo, LawInfo, ExpandLevel } from '../types/law'
 import type { LawType } from '../types/law'
 import { searchLaws, getLawData, getLawRevisions } from '../api/client'
 import { parseLawFullText } from '../lib/parser'
@@ -9,10 +9,10 @@ interface SearchResult {
   revision_info: RevisionInfo
 }
 
-export type ViewMode = 'tree' | 'outline'
+export type ViewMode = 'list' | 'diagram' | 'outline'
 
 interface LawStore {
-  // 検索
+  // 法令検索
   searchQuery: string
   searchResults: SearchResult[]
   searchLoading: boolean
@@ -27,6 +27,7 @@ interface LawStore {
   lawTree: LawTreeNode[]
   lawLoading: boolean
   lawError: string | null
+  availableTypes: Set<LawNodeType>
 
   // 表示設定
   viewMode: ViewMode
@@ -34,6 +35,7 @@ interface LawStore {
   expandedNodes: Set<string>
   tocVisible: boolean
   useArabicNum: boolean
+  zoomLevel: number
 
   // レスポンシブ
   searchPanelOpen: boolean
@@ -42,6 +44,12 @@ interface LawStore {
   asof: string | null
   revisions: RevisionInfo[]
   revisionsLoading: boolean
+
+  // ツリー内テキスト検索
+  isTextSearchOpen: boolean
+  textSearchQuery: string
+  textSearchResultIds: string[]
+  textSearchActiveIndex: number
 
   // アクション
   setSearchQuery: (query: string) => void
@@ -57,6 +65,14 @@ interface LawStore {
   loadRevisions: () => Promise<void>
   setSearchPanelOpen: (open: boolean) => void
   toggleArabicNum: () => void
+  setZoomLevel: (level: number) => void
+
+  // テキスト検索アクション
+  openTextSearch: () => void
+  closeTextSearch: () => void
+  setTextSearchQuery: (query: string) => void
+  goToNextTextResult: () => void
+  goToPrevTextResult: () => void
 }
 
 // 階層の順序（浅い→深い）
@@ -75,6 +91,22 @@ const TYPE_ORDER: Record<string, number> = {
   suppl_provision: 1,
 }
 
+// 展開レベルの順序（フォールバック用）
+const LEVEL_FALLBACK_ORDER: ExpandLevel[] = [
+  'part', 'chapter', 'section', 'subsection', 'division', 'article', 'paragraph',
+]
+
+// ツリー内の全ノードタイプを収集
+function collectAvailableTypes(nodes: LawTreeNode[]): Set<LawNodeType> {
+  const types = new Set<LawNodeType>()
+  function walk(node: LawTreeNode) {
+    types.add(node.type)
+    for (const child of node.children) walk(child)
+  }
+  for (const n of nodes) walk(n)
+  return types
+}
+
 // 指定タイプのノードが「見える」ように、その親を全て展開する
 // 指定タイプのノード自体は展開しない（子は見えない）
 function collectExpandedIds(nodes: LawTreeNode[], targetType: ExpandLevel): Set<string> {
@@ -84,17 +116,14 @@ function collectExpandedIds(nodes: LawTreeNode[], targetType: ExpandLevel): Set<
   function walk(node: LawTreeNode): boolean {
     const nodeOrder = TYPE_ORDER[node.type] ?? 99
 
-    // このノードが対象タイプなら、このノード自体は展開しない（見えるだけ）
     if (node.type === targetType) {
-      return true // 親に「子孫に対象がいる」と伝える
+      return true
     }
 
-    // このノードが対象より深い場合、展開しない
     if (nodeOrder > targetOrder) {
       return false
     }
 
-    // 子を走査して、子孫に対象タイプがあるか確認
     let hasTarget = false
     for (const child of node.children) {
       if (walk(child)) {
@@ -102,7 +131,6 @@ function collectExpandedIds(nodes: LawTreeNode[], targetType: ExpandLevel): Set<
       }
     }
 
-    // 子孫に対象がいるなら、このノードを展開する
     if (hasTarget) {
       ids.add(node.id)
     }
@@ -114,6 +142,43 @@ function collectExpandedIds(nodes: LawTreeNode[], targetType: ExpandLevel): Set<
     walk(node)
   }
   return ids
+}
+
+// 指定タイプが存在しない場合、1つ上のレベルにフォールバック
+function resolveExpandLevel(targetType: ExpandLevel, availableTypes: Set<LawNodeType>): ExpandLevel {
+  const idx = LEVEL_FALLBACK_ORDER.indexOf(targetType)
+  if (idx < 0) return targetType
+
+  // 指定レベルが存在すればそのまま
+  if (availableTypes.has(targetType)) return targetType
+
+  // 上のレベルへフォールバック
+  for (let i = idx - 1; i >= 0; i--) {
+    if (availableTypes.has(LEVEL_FALLBACK_ORDER[i])) {
+      return LEVEL_FALLBACK_ORDER[i]
+    }
+  }
+
+  return 'chapter' // 最終フォールバック
+}
+
+// テキスト検索: ツリーを全走査してクエリに一致するノードIDを収集
+function performTextSearch(nodes: LawTreeNode[], query: string): string[] {
+  if (!query) return []
+  const lowerQuery = query.toLowerCase()
+  const results: string[] = []
+
+  function walk(node: LawTreeNode) {
+    const titleMatch = node.title.toLowerCase().includes(lowerQuery)
+    const contentMatch = node.content.toLowerCase().includes(lowerQuery)
+    if (titleMatch || contentMatch) {
+      results.push(node.id)
+    }
+    for (const child of node.children) walk(child)
+  }
+
+  for (const n of nodes) walk(n)
+  return results
 }
 
 export const useLawStore = create<LawStore>((set, get) => ({
@@ -130,18 +195,25 @@ export const useLawStore = create<LawStore>((set, get) => ({
   lawTree: [],
   lawLoading: false,
   lawError: null,
+  availableTypes: new Set(),
 
-  viewMode: 'tree',
+  viewMode: 'list',
   expandLevel: null,
   expandedNodes: new Set(),
   tocVisible: false,
   useArabicNum: false,
+  zoomLevel: 1,
 
   searchPanelOpen: true,
 
   asof: null,
   revisions: [],
   revisionsLoading: false,
+
+  isTextSearchOpen: false,
+  textSearchQuery: '',
+  textSearchResultIds: [],
+  textSearchActiveIndex: -1,
 
   setSearchQuery: (query) => set({ searchQuery: query }),
 
@@ -185,17 +257,20 @@ export const useLawStore = create<LawStore>((set, get) => ({
       lawTree: [],
       expandedNodes: new Set(),
       expandLevel: null,
+      availableTypes: new Set(),
       revisions: [],
     })
     try {
       const res = await getLawData(lawId, asof ?? undefined)
       const tree = parseLawFullText(res.law_full_text)
+      const available = collectAvailableTypes(tree)
       const expanded = collectExpandedIds(tree, 'chapter')
       set({
         lawTree: tree,
         lawLoading: false,
         expandedNodes: expanded,
         expandLevel: 'chapter',
+        availableTypes: available,
       })
       get().loadRevisions()
     } catch (e) {
@@ -207,8 +282,9 @@ export const useLawStore = create<LawStore>((set, get) => ({
   },
 
   setExpandLevel: (level) => {
-    const { lawTree } = get()
-    const expanded = collectExpandedIds(lawTree, level)
+    const { lawTree, availableTypes } = get()
+    const resolved = resolveExpandLevel(level, availableTypes)
+    const expanded = collectExpandedIds(lawTree, resolved)
     set({ expandLevel: level, expandedNodes: expanded })
   },
 
@@ -251,9 +327,51 @@ export const useLawStore = create<LawStore>((set, get) => ({
 
   toggleArabicNum: () => set((s) => ({ useArabicNum: !s.useArabicNum })),
 
+  setZoomLevel: (level) => set({ zoomLevel: Math.max(0.25, Math.min(3, level)) }),
+
+  // テキスト検索
+  openTextSearch: () => set({ isTextSearchOpen: true }),
+
+  closeTextSearch: () => set({
+    isTextSearchOpen: false,
+    textSearchQuery: '',
+    textSearchResultIds: [],
+    textSearchActiveIndex: -1,
+  }),
+
+  setTextSearchQuery: (query) => {
+    const { lawTree } = get()
+    const results = performTextSearch(lawTree, query)
+    set({
+      textSearchQuery: query,
+      textSearchResultIds: results,
+      textSearchActiveIndex: results.length > 0 ? 0 : -1,
+    })
+    // 最初の結果にスクロール
+    if (results.length > 0) {
+      get().scrollToNode(results[0])
+    }
+  },
+
+  goToNextTextResult: () => {
+    const { textSearchResultIds, textSearchActiveIndex } = get()
+    if (textSearchResultIds.length === 0) return
+    const next = (textSearchActiveIndex + 1) % textSearchResultIds.length
+    set({ textSearchActiveIndex: next })
+    get().scrollToNode(textSearchResultIds[next])
+  },
+
+  goToPrevTextResult: () => {
+    const { textSearchResultIds, textSearchActiveIndex } = get()
+    if (textSearchResultIds.length === 0) return
+    const prev = (textSearchActiveIndex - 1 + textSearchResultIds.length) % textSearchResultIds.length
+    set({ textSearchActiveIndex: prev })
+    get().scrollToNode(textSearchResultIds[prev])
+  },
+
   scrollToNode: (nodeId) => {
     const { lawTree, expandedNodes, viewMode } = get()
-    if (viewMode === 'tree') {
+    if (viewMode === 'list') {
       const path = findNodePath(lawTree, nodeId)
       if (path) {
         const next = new Set(expandedNodes)
