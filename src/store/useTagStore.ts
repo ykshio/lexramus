@@ -60,11 +60,12 @@ export const useTagStore = create<TagStore>((set, get) => ({
     const current = next[lawId][nodeId] ?? []
 
     if (current.includes(colorId)) {
-      next[lawId][nodeId] = current.filter((c) => c !== colorId)
-      if (next[lawId][nodeId].length === 0) delete next[lawId][nodeId]
+      // 同じ色なら解除
+      delete next[lawId][nodeId]
       if (Object.keys(next[lawId]).length === 0) delete next[lawId]
     } else {
-      next[lawId][nodeId] = [...current, colorId]
+      // 単一選択: 置き換え
+      next[lawId][nodeId] = [colorId]
     }
 
     saveTags(next)
