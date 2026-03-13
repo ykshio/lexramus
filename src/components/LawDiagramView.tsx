@@ -175,7 +175,7 @@ function DiagramNode({ node, width }: { node: LawTreeNode; width: number }) {
       className={`
         px-2 py-1 rounded-lg text-xs cursor-pointer select-none group
         transition-colors min-h-[36px] flex items-center gap-1
-        ${textExpanded ? 'whitespace-normal' : 'truncate'}
+        ${textExpanded ? 'whitespace-normal' : 'whitespace-nowrap overflow-visible'}
         ${isStructural ? 'font-semibold text-gray-800' : 'text-gray-600'}
         ${baseBg}
         hover:brightness-95

@@ -44,7 +44,7 @@ export function TagPicker({ nodeId }: TagPickerProps) {
           : '色タグ'}
       />
       {open && (
-        <div className="absolute left-0 top-full mt-1 z-10 bg-white border border-gray-200 rounded shadow-lg p-1.5 flex gap-1">
+        <div className="absolute left-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded shadow-lg p-1.5 flex gap-1">
           {TAG_COLORS.map((color) => {
             const active = nodeTags.includes(color.id)
             return (
