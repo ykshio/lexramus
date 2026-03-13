@@ -1,4 +1,5 @@
 import { useLawStore } from '../store/useLawStore'
+import { convertToArabic } from '../lib/kansuji'
 import type { LawTreeNode, LawNodeType } from '../types/law'
 
 const TOC_TYPES: LawNodeType[] = [
@@ -20,7 +21,7 @@ function collectTocEntries(nodes: LawTreeNode[]): LawTreeNode[] {
 }
 
 export function TocPanel() {
-  const { lawTree, tocVisible, setTocVisible, scrollToNode } = useLawStore()
+  const { lawTree, tocVisible, setTocVisible, scrollToNode, useArabicNum } = useLawStore()
 
   if (!tocVisible || lawTree.length === 0) return null
 
@@ -47,7 +48,7 @@ export function TocPanel() {
             className="w-full text-left px-3 py-1 text-xs text-gray-600 hover:bg-gray-100 hover:text-gray-800 truncate"
             style={{ paddingLeft: (entry.depth - 1) * 12 + 12 }}
           >
-            {entry.title}
+            {useArabicNum ? convertToArabic(entry.title) : entry.title}
           </button>
         ))}
       </div>

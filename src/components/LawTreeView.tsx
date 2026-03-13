@@ -1,6 +1,7 @@
 import { useLawStore } from '../store/useLawStore'
 import { useTagStore, TAG_COLORS } from '../store/useTagStore'
 import { TagPicker } from './TagPicker'
+import { convertToArabic } from '../lib/kansuji'
 import type { LawTreeNode, LawNodeType } from '../types/law'
 
 const INDENT_PX = 20
@@ -22,7 +23,7 @@ function getTagBgClass(lawId: string | null, nodeId: string): string {
 }
 
 function TreeNode({ node }: { node: LawTreeNode }) {
-  const { expandedNodes, toggleNode, selectedLawId } = useLawStore()
+  const { expandedNodes, toggleNode, selectedLawId, useArabicNum } = useLawStore()
   const activeFilter = useTagStore((s) => s.activeFilter)
   const tags = useTagStore((s) => selectedLawId ? s.tags[selectedLawId]?.[node.id] : undefined)
   const hasChildren = node.children.length > 0
@@ -43,6 +44,9 @@ function TreeNode({ node }: { node: LawTreeNode }) {
     } else if (node.type === 'preamble') {
       displayTitle = '前文'
     }
+  }
+  if (useArabicNum && displayTitle) {
+    displayTitle = convertToArabic(displayTitle)
   }
 
   const showInline = node.type === 'paragraph' || node.type === 'item' || node.type === 'subitem'

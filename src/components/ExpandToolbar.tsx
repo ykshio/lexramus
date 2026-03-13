@@ -7,6 +7,7 @@ export function ExpandToolbar() {
     expandLevel, setExpandLevel, lawTree,
     viewMode, setViewMode,
     tocVisible, setTocVisible,
+    useArabicNum, toggleArabicNum,
   } = useLawStore()
   const { activeFilter, setActiveFilter } = useTagStore()
 
@@ -68,6 +69,20 @@ export function ExpandToolbar() {
           解除
         </button>
       )}
+
+      {/* 漢数字/算用数字切替 */}
+      <div className="w-px h-4 bg-gray-300 mx-2" />
+      <button
+        onClick={toggleArabicNum}
+        className={`px-2 py-0.5 text-xs rounded border ${
+          useArabicNum
+            ? 'bg-blue-600 text-white border-blue-600'
+            : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+        }`}
+        title="条文番号を算用数字に変換"
+      >
+        {useArabicNum ? '1,2,3' : '一,二,三'}
+      </button>
 
       <div className="flex-1" />
 

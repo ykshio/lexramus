@@ -33,6 +33,7 @@ interface LawStore {
   expandLevel: ExpandLevel | null
   expandedNodes: Set<string>
   tocVisible: boolean
+  useArabicNum: boolean
 
   // レスポンシブ
   searchPanelOpen: boolean
@@ -55,6 +56,7 @@ interface LawStore {
   setAsof: (date: string | null) => void
   loadRevisions: () => Promise<void>
   setSearchPanelOpen: (open: boolean) => void
+  toggleArabicNum: () => void
 }
 
 // 階層の順序（浅い→深い）
@@ -133,6 +135,7 @@ export const useLawStore = create<LawStore>((set, get) => ({
   expandLevel: null,
   expandedNodes: new Set(),
   tocVisible: false,
+  useArabicNum: false,
 
   searchPanelOpen: true,
 
@@ -245,6 +248,8 @@ export const useLawStore = create<LawStore>((set, get) => ({
   },
 
   setSearchPanelOpen: (open) => set({ searchPanelOpen: open }),
+
+  toggleArabicNum: () => set((s) => ({ useArabicNum: !s.useArabicNum })),
 
   scrollToNode: (nodeId) => {
     const { lawTree, expandedNodes, viewMode } = get()

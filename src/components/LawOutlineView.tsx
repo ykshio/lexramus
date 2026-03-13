@@ -1,6 +1,7 @@
 import { useLawStore } from '../store/useLawStore'
 import { useTagStore, TAG_COLORS } from '../store/useTagStore'
 import { TagPicker } from './TagPicker'
+import { convertToArabic } from '../lib/kansuji'
 import type { LawTreeNode, LawNodeType } from '../types/law'
 
 const STRUCTURAL_TYPES: LawNodeType[] = [
@@ -41,12 +42,14 @@ function getTagBgClass(lawId: string | null, nodeId: string): string {
 
 function OutlineNode({ node }: { node: LawTreeNode }) {
   const selectedLawId = useLawStore((s) => s.selectedLawId)
+  const useArabicNum = useLawStore((s) => s.useArabicNum)
   const activeFilter = useTagStore((s) => s.activeFilter)
   const tags = useTagStore((s) => selectedLawId ? s.tags[selectedLawId]?.[node.id] : undefined)
   const isStructural = STRUCTURAL_TYPES.includes(node.type)
   const isTaggable = TAGGABLE_TYPES.includes(node.type)
   const dimmed = activeFilter && (!tags || !tags.includes(activeFilter))
   const tagBg = getTagBgClass(selectedLawId, node.id)
+  const t = (s: string) => useArabicNum ? convertToArabic(s) : s
 
   if (node.type === 'toc') return null
 
@@ -54,7 +57,7 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
     const style = DEPTH_STYLES[node.depth] ?? 'text-sm font-medium text-gray-600 mt-2'
     return (
       <div id={`law-node-${node.id}`} className={`${style} ${dimmed ? 'opacity-30' : ''}`}>
-        {node.title}
+        {t(node.title)}
       </div>
     )
   }
@@ -64,7 +67,7 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
       <div id={`law-node-${node.id}`} className={`mt-3 mb-1 group flex items-start gap-1 ${tagBg} ${dimmed ? 'opacity-30' : ''}`}>
         {isTaggable && <TagPicker nodeId={node.id} />}
         <div className="flex-1">
-          <span className="text-sm font-semibold text-gray-800">{node.title}</span>
+          <span className="text-sm font-semibold text-gray-800">{t(node.title)}</span>
           {node.content && (
             <p className="text-sm text-gray-600 mt-0.5 leading-relaxed">{node.content}</p>
           )}
