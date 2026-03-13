@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useLawStore } from '../store/useLawStore'
 import { useTagStore, TAG_COLORS } from '../store/useTagStore'
 import { convertToArabic } from '../lib/kansuji'
@@ -27,20 +27,29 @@ function getTextWidth(text: string, bold: boolean): number {
   return measureCtx.measureText(text).width
 }
 
-// 兄弟ノード群の最大テキスト幅から共通幅を算出
-function calculateSiblingWidth(children: LawTreeNode[]): number {
-  let maxTextWidth = 0
+// ツリー全体でdepthごとの最大ノード幅を計算
+function calculateDepthWidths(nodes: LawTreeNode[]): Map<number, number> {
+  const maxByDepth = new Map<number, number>()
 
-  for (const child of children) {
-    const showInline = child.type === 'paragraph' || child.type === 'item' || child.type === 'subitem'
-    const displayText = showInline && child.title && child.content
-      ? `${child.title}\u3000${child.content}`
-      : child.title || child.content.slice(0, 40) || '...'
-    const isStructural = STRUCTURAL_TYPES.includes(child.type)
-    maxTextWidth = Math.max(maxTextWidth, getTextWidth(displayText, isStructural))
+  function walk(node: LawTreeNode) {
+    const showInline = node.type === 'paragraph' || node.type === 'item' || node.type === 'subitem'
+    const displayText = showInline && node.title && node.content
+      ? `${node.title}\u3000${node.content}`
+      : node.title || node.content.slice(0, 40) || '...'
+    const isStructural = STRUCTURAL_TYPES.includes(node.type)
+    const w = getTextWidth(displayText, isStructural)
+    const cur = maxByDepth.get(node.depth) ?? 0
+    if (w > cur) maxByDepth.set(node.depth, w)
+    for (const child of node.children) walk(child)
   }
 
-  return Math.max(MIN_NODE_WIDTH, Math.min(MAX_NODE_WIDTH, Math.ceil(maxTextWidth + NODE_CHROME)))
+  for (const n of nodes) walk(n)
+
+  const widths = new Map<number, number>()
+  for (const [depth, maxW] of maxByDepth) {
+    widths.set(depth, Math.max(MIN_NODE_WIDTH, Math.min(MAX_NODE_WIDTH, Math.ceil(maxW + NODE_CHROME))))
+  }
+  return widths
 }
 
 function getNodeTagBg(lawId: string | null, nodeId: string): string {
@@ -53,6 +62,7 @@ function getNodeTagBg(lawId: string | null, nodeId: string): string {
 
 function DiagramNode({ node, width }: { node: LawTreeNode; width: number }) {
   const { expandedNodes, toggleNode, selectedLawId, useArabicNum, textSearchQuery, textSearchResultIds, textSearchActiveIndex } = useLawStore()
+  const [textExpanded, setTextExpanded] = useState(false)
   const isStructural = STRUCTURAL_TYPES.includes(node.type)
   const hasChildren = node.children.length > 0
   const isExpanded = expandedNodes.has(node.id)
@@ -89,18 +99,28 @@ function DiagramNode({ node, width }: { node: LawTreeNode; width: number }) {
     <div
       id={`law-node-${node.id}`}
       className={`
-        px-2 py-1 rounded-lg text-xs cursor-pointer select-none truncate
+        px-2 py-1 rounded-lg text-xs cursor-pointer select-none
         transition-colors min-h-[36px] flex items-center gap-1
+        ${textExpanded ? 'whitespace-normal' : 'truncate'}
         ${isStructural ? 'font-semibold text-gray-800 bg-gray-100 border border-gray-200' : 'text-gray-600 bg-white border border-gray-200'}
-        ${hasChildren ? 'hover:bg-gray-50' : ''}
+        hover:bg-gray-50
         ${tagBg}
         ${searchHighlight}
       `}
-      style={{ width: `${width}px` }}
-      onClick={() => hasChildren && toggleNode(node.id)}
-      title={showInline && displayTitle && node.content ? `${displayTitle}\u3000${node.content}` : displayTitle || node.content.slice(0, 100)}
+      style={textExpanded ? { minWidth: `${width}px`, maxWidth: '600px' } : { width: `${width}px` }}
+      title={!textExpanded ? (showInline && displayTitle && node.content ? `${displayTitle}\u3000${node.content}` : displayTitle || node.content.slice(0, 100)) : undefined}
     >
-      <span className="truncate flex-1">
+      <span
+        className={`${textExpanded ? '' : 'truncate'} flex-1`}
+        onClick={(e) => {
+          if (!isStructural && (node.content || displayText.length > 20)) {
+            e.stopPropagation()
+            setTextExpanded(!textExpanded)
+          } else if (hasChildren) {
+            toggleNode(node.id)
+          }
+        }}
+      >
         {textSearchQuery ? highlightText(displayText, textSearchQuery) : displayText}
       </span>
       {hasChildren && (
@@ -110,6 +130,10 @@ function DiagramNode({ node, width }: { node: LawTreeNode; width: number }) {
           viewBox="0 0 24 24"
           stroke="currentColor"
           strokeWidth={2}
+          onClick={(e) => {
+            e.stopPropagation()
+            toggleNode(node.id)
+          }}
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
         </svg>
@@ -159,12 +183,11 @@ function BranchConnector({ index, total }: { index: number; total: number }) {
   )
 }
 
-function TreeBranch({ node, width }: { node: LawTreeNode; width: number }) {
+function TreeBranch({ node, depthWidths }: { node: LawTreeNode; depthWidths: Map<number, number> }) {
   const expandedNodes = useLawStore((s) => s.expandedNodes)
   const hasChildren = node.children.length > 0
   const isExpanded = expandedNodes.has(node.id)
-
-  const childWidth = hasChildren ? calculateSiblingWidth(node.children) : 0
+  const width = depthWidths.get(node.depth) ?? MIN_NODE_WIDTH
 
   return (
     <div className="flex items-start">
@@ -187,7 +210,7 @@ function TreeBranch({ node, width }: { node: LawTreeNode; width: number }) {
             {node.children.map((child, i, arr) => (
               <div key={child.id} className="flex items-stretch">
                 <BranchConnector index={i} total={arr.length} />
-                <TreeBranch node={child} width={childWidth} />
+                <TreeBranch node={child} depthWidths={depthWidths} />
               </div>
             ))}
           </div>
@@ -262,7 +285,7 @@ export function LawDiagramView() {
     )
   }
 
-  const rootWidth = calculateSiblingWidth(lawTree)
+  const depthWidths = calculateDepthWidths(lawTree)
 
   return (
     <div ref={scrollRef} className="flex-1 overflow-auto p-6">
@@ -275,7 +298,7 @@ export function LawDiagramView() {
       >
         {lawTree.map((node) => (
           <div key={node.id} className="mb-4">
-            <TreeBranch node={node} width={rootWidth} />
+            <TreeBranch node={node} depthWidths={depthWidths} />
           </div>
         ))}
       </div>
