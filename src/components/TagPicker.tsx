@@ -30,7 +30,7 @@ export function TagPicker({ nodeId }: TagPickerProps) {
     : null
 
   return (
-    <div ref={ref} className="relative inline-flex items-center flex-shrink-0">
+    <div ref={ref} className="relative inline-flex items-center flex-shrink-0 mt-1">
       {/* メインのドットボタン: タグがあれば色付き、なければグレー（ホバーで表示） */}
       <button
         onClick={(e) => { e.stopPropagation(); setOpen(!open) }}
