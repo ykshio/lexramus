@@ -93,11 +93,11 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
   if (node.type === 'paragraph') {
     const hasTitle = node.richTitle.length > 0
     return (
-      <div id={`law-node-${node.id}`} className={`ml-4 mt-0.5 group flex items-start gap-1 ${tagBg} ${searchHighlight} ${dimmed ? 'opacity-30' : ''}`}>
+      <div id={`law-node-${node.id}`} className={`mt-0.5 group flex items-start gap-1 ${tagBg} ${searchHighlight} ${dimmed ? 'opacity-30' : ''}`}>
         {isTaggable && <TagPicker nodeId={node.id} />}
         <div className="flex items-baseline gap-0 text-sm text-gray-600 leading-relaxed flex-1">
           {hasTitle && <span className="shrink-0 font-medium"><RubyText segments={node.richTitle} searchQuery={sq} /></span>}
-          {node.richContent.length > 0 && <span>{hasTitle ? '\u3000' : ''}<RubyText segments={node.richContent} searchQuery={sq} /></span>}
+          {node.richContent.length > 0 && <span>{'\u3000'}<RubyText segments={node.richContent} searchQuery={sq} /></span>}
         </div>
       </div>
     )
