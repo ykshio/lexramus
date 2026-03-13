@@ -100,7 +100,7 @@ export function ExpandToolbar() {
               const showSep = i > 0 && level.type === 'article'
               return (
                 <span key={level.type} className="flex items-center gap-1">
-                  {showSep && <span className="text-gray-300 text-xs select-none">|</span>}
+                  {showSep && <div className="w-px h-4 bg-gray-300 mx-1" />}
                   <button
                     onClick={() => setExpandLevel(level.type)}
                     className={`px-2 py-0.5 text-xs rounded border flex-shrink-0 ${
@@ -172,7 +172,7 @@ export function ExpandToolbar() {
             const showSep = i > 0 && level.type === 'article'
             return (
               <span key={level.type} className="flex items-center gap-1 flex-shrink-0">
-                {showSep && <span className="text-gray-300 text-xs select-none">|</span>}
+                {showSep && <div className="w-px h-4 bg-gray-300 mx-1" />}
                 <button
                   onClick={() => setExpandLevel(level.type)}
                   className={`px-2 py-0.5 text-xs rounded border flex-shrink-0 ${
