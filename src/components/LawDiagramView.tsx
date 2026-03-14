@@ -356,7 +356,7 @@ export function LawDiagramView() {
   const columnInfo = calculateColumnInfo(lawTree)
 
   return (
-    <div ref={scrollRef} className="flex-1 overflow-auto p-6">
+    <div ref={scrollRef} id="main-scroll-container" className="flex-1 overflow-auto p-6">
       <div
         className="min-w-max"
         style={{

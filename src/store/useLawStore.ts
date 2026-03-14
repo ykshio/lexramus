@@ -116,6 +116,7 @@ function collectExpandedIds(nodes: LawTreeNode[], targetType: ExpandLevel): Set<
   if (targetType === 'list') {
     const articleOrder = TYPE_ORDER['article'] ?? 99
     function walkList(node: LawTreeNode) {
+      if (node.type === 'suppl_group') return
       const nodeOrder = TYPE_ORDER[node.type] ?? 99
       if (nodeOrder >= articleOrder || node.children.length === 0) return
       const hasArticle = node.children.some(c => c.type === 'article')
@@ -140,6 +141,7 @@ function collectExpandedIds(nodes: LawTreeNode[], targetType: ExpandLevel): Set<
   const targetOrder = TYPE_ORDER[targetType] ?? 99
 
   function walk(node: LawTreeNode): boolean {
+    if (node.type === 'suppl_group') return false
     const nodeOrder = TYPE_ORDER[node.type] ?? 99
 
     if (node.type === targetType) {
@@ -326,7 +328,48 @@ export const useLawStore = create<LawStore>((set, get) => ({
     set({ expandedNodes: next, expandLevel: null })
   },
 
-  setViewMode: (mode) => set({ viewMode: mode }),
+  setViewMode: (mode) => {
+    const { viewMode: prevMode, lawTree, expandedNodes } = get()
+    if (mode === prevMode) return
+
+    // 切替前: 画面上部に表示されているノードIDを検出
+    let anchorNodeId: string | null = null
+    const container = document.getElementById('main-scroll-container')
+    if (container) {
+      const nodeEls = container.querySelectorAll<HTMLElement>('[id^="law-node-"]')
+      const containerRect = container.getBoundingClientRect()
+      for (const el of nodeEls) {
+        const rect = el.getBoundingClientRect()
+        if (rect.top >= containerRect.top - 10) {
+          anchorNodeId = el.id.replace('law-node-', '')
+          break
+        }
+      }
+    }
+
+    // list/diagram 切替時: アンカーノードのパスを展開
+    if (anchorNodeId && (mode === 'list' || mode === 'diagram')) {
+      const path = findNodePath(lawTree, anchorNodeId)
+      if (path) {
+        const next = new Set(expandedNodes)
+        for (const n of path) next.add(n.id)
+        set({ viewMode: mode, expandedNodes: next, expandLevel: null })
+      } else {
+        set({ viewMode: mode })
+      }
+    } else {
+      set({ viewMode: mode })
+    }
+
+    // 切替後: アンカーノードへスクロール
+    if (anchorNodeId) {
+      const targetId = anchorNodeId
+      requestAnimationFrame(() => {
+        const el = document.getElementById(`law-node-${targetId}`)
+        el?.scrollIntoView({ block: 'start' })
+      })
+    }
+  },
 
   setTocVisible: (visible) => set({ tocVisible: visible }),
 

@@ -43,8 +43,14 @@ function App() {
         >
           {searchPanelOpen ? '✕' : '☰'}
         </button>
-        <img src={import.meta.env.BASE_URL + 'icon.png'} alt="LexRamus" className="w-6 h-6" />
-        <span className="text-sm font-semibold text-gray-800 hidden sm:inline">LexRamus</span>
+        <button
+          onClick={() => document.getElementById('main-scroll-container')?.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="flex items-center gap-1 hover:opacity-70 transition-opacity"
+          title="先頭に戻る"
+        >
+          <img src={import.meta.env.BASE_URL + 'icon.png'} alt="LexRamus" className="w-6 h-6" />
+          <span className="text-sm font-semibold text-gray-800 hidden sm:inline">LexRamus</span>
+        </button>
         <div className="flex-1" />
         {selectedLawId && <DatePicker />}
       </div>
@@ -82,7 +88,7 @@ function App() {
           {viewMode === 'diagram' ? (
             <LawDiagramView />
           ) : (
-            <div className="flex-1 overflow-y-auto">
+            <div id="main-scroll-container" className="flex-1 overflow-y-auto">
               {viewMode === 'list' ? <LawTreeView /> : <LawOutlineView />}
             </div>
           )}

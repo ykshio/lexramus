@@ -76,6 +76,13 @@ function TreeNode({ node }: { node: LawTreeNode }) {
         )}
         <div className="min-w-0 flex-1">
           {showInline ? (
+            !showTitle && node.type === 'paragraph' ? (
+              node.richContent.length > 0 && (
+                <div className="text-sm text-gray-600" style={{ paddingLeft: '1em', textIndent: '1em' }}>
+                  <RubyText segments={node.richContent} searchQuery={textSearchQuery} arabicNum={useArabicNum} />
+                </div>
+              )
+            ) : (
             <div className="flex items-baseline gap-0">
               {showTitle && (
                 <span className="shrink-0 text-sm font-medium text-gray-700">
@@ -89,6 +96,7 @@ function TreeNode({ node }: { node: LawTreeNode }) {
                 </span>
               )}
             </div>
+            )
           ) : (
             <>
               {showTitle && (
