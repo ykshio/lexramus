@@ -347,6 +347,15 @@ export const useLawStore = create<LawStore>((set, get) => ({
       }
     }
 
+    // 条レベルのアンカーに正規化（ビュー間で安定した位置を得るため）
+    if (anchorNodeId) {
+      const rawPath = findNodePath(lawTree, anchorNodeId)
+      if (rawPath) {
+        const article = [...rawPath].reverse().find(n => n.type === 'article')
+        if (article) anchorNodeId = article.id
+      }
+    }
+
     // list/diagram 切替時: アンカーノードのパスを展開
     if (anchorNodeId && (mode === 'list' || mode === 'diagram')) {
       const path = findNodePath(lawTree, anchorNodeId)
@@ -361,12 +370,14 @@ export const useLawStore = create<LawStore>((set, get) => ({
       set({ viewMode: mode })
     }
 
-    // 切替後: アンカーノードへスクロール
+    // 切替後: アンカーノードへスクロール（二重RAFでレンダリング完了を待つ）
     if (anchorNodeId) {
       const targetId = anchorNodeId
       requestAnimationFrame(() => {
-        const el = document.getElementById(`law-node-${targetId}`)
-        el?.scrollIntoView({ block: 'start' })
+        requestAnimationFrame(() => {
+          const el = document.getElementById(`law-node-${targetId}`)
+          el?.scrollIntoView({ block: 'start' })
+        })
       })
     }
   },
