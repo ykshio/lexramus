@@ -1,7 +1,9 @@
+import { useState, useRef, useEffect } from 'react'
 import { useLawStore } from '../store/useLawStore'
 import { useTagStore, TAG_COLORS } from '../store/useTagStore'
 import { EXPAND_LEVELS } from '../types/law'
 import type { LawNodeType } from '../types/law'
+import { exportAsOpml, exportAsScrapbox, downloadAsFile } from '../lib/export'
 
 const ZOOM_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3]
 
@@ -12,12 +14,43 @@ export function ExpandToolbar() {
     tocVisible, setTocVisible,
     useArabicNum, toggleArabicNum,
     zoomLevel, setZoomLevel,
+    selectedLawTitle,
   } = useLawStore()
   const { activeFilter, setActiveFilter } = useTagStore()
+  const [exportOpen, setExportOpen] = useState(false)
+  const [copyDone, setCopyDone] = useState(false)
+  const exportRef = useRef<HTMLDivElement>(null)
+
+  // 外側クリックで閉じる
+  useEffect(() => {
+    if (!exportOpen) return
+    const handleClick = (e: MouseEvent) => {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) {
+        setExportOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [exportOpen])
 
   if (lawTree.length === 0) return null
 
   const isDiagram = viewMode === 'diagram'
+  const lawTitle = selectedLawTitle || '法令'
+
+  const handleOpml = () => {
+    const xml = exportAsOpml(lawTree, lawTitle)
+    downloadAsFile(xml, `${lawTitle}.opml`, 'text/xml')
+    setExportOpen(false)
+  }
+
+  const handleScrapbox = () => {
+    const text = exportAsScrapbox(lawTree, lawTitle, expandLevel)
+    navigator.clipboard.writeText(text)
+    setCopyDone(true)
+    setTimeout(() => setCopyDone(false), 2000)
+    setExportOpen(false)
+  }
 
   const zoomIn = () => {
     const next = ZOOM_STEPS.find((z) => z > zoomLevel)
@@ -90,6 +123,37 @@ export function ExpandToolbar() {
         >
           {useArabicNum ? '1,2,3' : '一,二,三'}
         </button>
+
+        {/* エクスポート */}
+        <div ref={exportRef} className="relative flex-shrink-0">
+          <button
+            onClick={() => setExportOpen(!exportOpen)}
+            className={`px-2 py-0.5 text-xs rounded border flex-shrink-0 ${
+              copyDone
+                ? 'bg-green-600 text-white border-green-600'
+                : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+            }`}
+            title="エクスポート"
+          >
+            {copyDone ? 'コピー済' : '出力'}
+          </button>
+          {exportOpen && (
+            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded shadow-lg z-30 whitespace-nowrap">
+              <button
+                onClick={handleOpml}
+                className="block w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100"
+              >
+                OPMLダウンロード
+              </button>
+              <button
+                onClick={handleScrapbox}
+                className="block w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100"
+              >
+                Scrapboxコピー
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* 展開レベル（プレーン以外） - デスクトップでは同一行 */}
         {viewMode !== 'outline' && (
