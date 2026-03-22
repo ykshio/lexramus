@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { SearchPanel } from './components/SearchPanel'
 import { ExpandToolbar } from './components/ExpandToolbar'
 import { LawTreeView } from './components/LawTreeView'
@@ -11,6 +11,7 @@ import { StatusBar } from './components/StatusBar'
 import { useLawStore } from './store/useLawStore'
 import { syncUrlToState, updateUrl } from './lib/url'
 import { setupKeyboardShortcuts } from './lib/keyboard'
+import { exportAsOpml, exportAsScrapbox, downloadAsFile } from './lib/export'
 
 function App() {
   const viewMode = useLawStore((s) => s.viewMode)
@@ -18,6 +19,9 @@ function App() {
   const asof = useLawStore((s) => s.asof)
   const searchPanelOpen = useLawStore((s) => s.searchPanelOpen)
   const setSearchPanelOpen = useLawStore((s) => s.setSearchPanelOpen)
+  const [fileMenuOpen, setFileMenuOpen] = useState(false)
+  const [copyDone, setCopyDone] = useState(false)
+  const fileMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     syncUrlToState()
@@ -30,6 +34,34 @@ function App() {
   useEffect(() => {
     return setupKeyboardShortcuts()
   }, [])
+
+  // ファイルメニュー外側クリックで閉じる
+  useEffect(() => {
+    if (!fileMenuOpen) return
+    const handleClick = (e: MouseEvent) => {
+      if (fileMenuRef.current && !fileMenuRef.current.contains(e.target as Node)) {
+        setFileMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [fileMenuOpen])
+
+  const handleOpml = () => {
+    const { lawTree, selectedLawTitle } = useLawStore.getState()
+    const title = selectedLawTitle || '法令'
+    downloadAsFile(exportAsOpml(lawTree, title), `${title}.opml`, 'text/xml')
+    setFileMenuOpen(false)
+  }
+
+  const handleScrapbox = () => {
+    const { lawTree, selectedLawTitle, expandLevel } = useLawStore.getState()
+    const title = selectedLawTitle || '法令'
+    navigator.clipboard.writeText(exportAsScrapbox(lawTree, title, expandLevel))
+    setCopyDone(true)
+    setTimeout(() => setCopyDone(false), 2000)
+    setFileMenuOpen(false)
+  }
 
   return (
     <div className="h-screen flex flex-col bg-white">
@@ -51,6 +83,36 @@ function App() {
           <img src={import.meta.env.BASE_URL + 'icon.png'} alt="LexRamus" className="w-6 h-6" />
           <span className="text-sm font-semibold text-gray-800 hidden sm:inline">LexRamus</span>
         </button>
+        {selectedLawId && (
+          <div ref={fileMenuRef} className="relative">
+            <button
+              onClick={() => setFileMenuOpen(!fileMenuOpen)}
+              className={`px-2 py-0.5 text-xs rounded border ${
+                copyDone
+                  ? 'bg-green-600 text-white border-green-600'
+                  : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              {copyDone ? 'コピー済' : '出力'}
+            </button>
+            {fileMenuOpen && (
+              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded shadow-lg z-50 whitespace-nowrap">
+                <button
+                  onClick={handleOpml}
+                  className="block w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100"
+                >
+                  OPMLダウンロード
+                </button>
+                <button
+                  onClick={handleScrapbox}
+                  className="block w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100"
+                >
+                  Scrapboxコピー
+                </button>
+              </div>
+            )}
+          </div>
+        )}
         <div className="flex-1" />
         {selectedLawId && <DatePicker />}
       </div>
