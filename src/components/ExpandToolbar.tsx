@@ -23,6 +23,7 @@ export function ExpandToolbar() {
     zoomLevel, setZoomLevel,
     isTextSearchOpen, openTextSearch,
     bracketMode, setBracketMode,
+    lawHistory, goBack,
   } = useLawStore()
   const { activeFilter, setActiveFilter } = useTagStore()
 
@@ -43,6 +44,17 @@ export function ExpandToolbar() {
     <div className="border-b border-gray-200 bg-gray-50 flex-shrink-0">
       {/* メイン行: デスクトップでは全要素1行 / モバイルではコントロール部分のみ */}
       <div className="flex items-center gap-1 px-3 py-1.5 overflow-x-auto">
+        {/* 戻るボタン */}
+        {lawHistory.length > 0 && (
+          <button
+            onClick={goBack}
+            className="px-1.5 py-0.5 text-xs rounded border border-gray-300 text-gray-600 hover:bg-gray-100 flex-shrink-0"
+            title="前の法令に戻る"
+          >
+            ← 戻る
+          </button>
+        )}
+
         {/* ビュー切替 */}
         <div className="flex border border-gray-300 rounded overflow-hidden mr-1 flex-shrink-0">
           <button

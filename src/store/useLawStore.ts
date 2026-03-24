@@ -52,6 +52,9 @@ interface LawStore {
   relatedLaws: { title: string; lawId: string; lawNum: string; tree: LawTreeNode[] }[]
   relatedLawsLoading: boolean
 
+  // 閲覧履歴
+  lawHistory: { lawId: string; title: string; lawNum: string }[]
+
   // ツリー内テキスト検索
   isTextSearchOpen: boolean
   textSearchQuery: string
@@ -75,6 +78,8 @@ interface LawStore {
   setBracketMode: (mode: BracketMode) => void
   setZoomLevel: (level: number) => void
   loadRelatedLaws: () => Promise<void>
+  goBack: () => void
+  canGoBack: () => boolean
 
   // テキスト検索アクション
   openTextSearch: () => void
@@ -256,6 +261,8 @@ export const useLawStore = create<LawStore>((set, get) => ({
   relatedLaws: [],
   relatedLawsLoading: false,
 
+  lawHistory: [],
+
   isTextSearchOpen: false,
   textSearchQuery: '',
   textSearchResultIds: [],
@@ -293,7 +300,11 @@ export const useLawStore = create<LawStore>((set, get) => ({
   },
 
   selectLaw: async (lawId, title, lawNum) => {
-    const { asof } = get()
+    const { asof, selectedLawId, selectedLawTitle, selectedLawNum, lawHistory } = get()
+    // 現在表示中の法令を履歴に保存
+    if (selectedLawId && selectedLawTitle && selectedLawNum !== null) {
+      set({ lawHistory: [...lawHistory, { lawId: selectedLawId, title: selectedLawTitle, lawNum: selectedLawNum ?? '' }] })
+    }
     set({
       selectedLawId: lawId,
       selectedLawTitle: title,
@@ -451,6 +462,41 @@ export const useLawStore = create<LawStore>((set, get) => ({
       set({ relatedLawsLoading: false })
     }
   },
+
+  goBack: () => {
+    const { lawHistory } = get()
+    if (lawHistory.length === 0) return
+    const prev = lawHistory[lawHistory.length - 1]
+    set({ lawHistory: lawHistory.slice(0, -1) })
+    // selectLaw内の履歴保存をスキップするため直接状態をセットしてデータ取得
+    const { asof } = get()
+    set({
+      selectedLawId: prev.lawId,
+      selectedLawTitle: prev.title,
+      selectedLawNum: prev.lawNum,
+      lawLoading: true,
+      lawError: null,
+      lawTree: [],
+      expandedNodes: new Set(),
+      expandLevel: null,
+      availableTypes: new Set(),
+      revisions: [],
+      relatedLaws: [],
+      relatedLawsLoading: false,
+    })
+    getLawData(prev.lawId, asof ?? undefined).then(res => {
+      const tree = parseLawFullText(res.law_full_text)
+      const available = collectAvailableTypes(tree)
+      const expanded = collectExpandedIds(tree, 'chapter')
+      set({ lawTree: tree, lawLoading: false, expandedNodes: expanded, expandLevel: 'chapter', availableTypes: available })
+      get().loadRevisions()
+      get().loadRelatedLaws()
+    }).catch(e => {
+      set({ lawLoading: false, lawError: e instanceof Error ? e.message : '法令の取得に失敗しました' })
+    })
+  },
+
+  canGoBack: () => get().lawHistory.length > 0,
 
   setSearchPanelOpen: (open) => set({ searchPanelOpen: open }),
 
