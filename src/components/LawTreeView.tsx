@@ -86,7 +86,7 @@ function TreeNode({ node }: { node: LawTreeNode }) {
             <div className="flex items-baseline gap-0">
               {showTitle && (
                 <span className="shrink-0 text-sm font-medium text-gray-700">
-                  <RubyText segments={richTitle} searchQuery={textSearchQuery} arabicNum={useArabicNum} bracketMode={bracketMode} />
+                  <RubyText segments={richTitle} searchQuery={textSearchQuery} arabicNum={useArabicNum} />
                 </span>
               )}
               {node.richContent.length > 0 && (
@@ -107,7 +107,7 @@ function TreeNode({ node }: { node: LawTreeNode }) {
                       : 'font-medium text-gray-700'
                   }`}
                 >
-                  <RubyText segments={richTitle} searchQuery={textSearchQuery} arabicNum={useArabicNum} bracketMode={bracketMode} />
+                  <RubyText segments={richTitle} searchQuery={textSearchQuery} arabicNum={useArabicNum} />
                 </span>
               )}
               {node.richContent.length > 0 && (

@@ -141,6 +141,8 @@ function DiagramNode({ node, width }: { node: LawTreeNode; width: number }) {
   const displayText = showInline && displayTitle && node.content
     ? `${displayTitle}\u3000${node.content}`
     : displayTitle || node.content || '...'
+  // 括弧モードは本文(content)を含む場合のみ適用（タイトルの「（目的）」等は対象外）
+  const effectiveBracketMode = node.content ? bracketMode : 'normal'
 
   const searchHighlight = isActiveSearchResult
     ? 'ring-2 ring-amber-400 bg-amber-100'
@@ -189,8 +191,8 @@ function DiagramNode({ node, width }: { node: LawTreeNode; width: number }) {
       {isTaggable && <TagPicker nodeId={node.id} />}
       <span className={`${textExpanded ? '' : 'truncate'} flex-1`}>
         {textSearchQuery
-          ? applyBracketToHighlighted(displayText, textSearchQuery, bracketMode)
-          : applyBracketMode(displayText, bracketMode)}
+          ? applyBracketToHighlighted(displayText, textSearchQuery, effectiveBracketMode)
+          : applyBracketMode(displayText, effectiveBracketMode)}
       </span>
       {hasChildren && (
         <svg
