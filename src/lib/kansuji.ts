@@ -93,3 +93,8 @@ export function convertToKanji(text: string): string {
     },
   )
 }
+
+// 汎用: 数字列をすべて漢数字に変換（「3条」→「三条」、「12」→「十二」）
+export function replaceArabicWithKanji(text: string): string {
+  return text.replace(/\d+/g, (m) => numberToKanji(parseInt(m, 10)))
+}

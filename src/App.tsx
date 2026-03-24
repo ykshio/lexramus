@@ -11,7 +11,7 @@ import { StatusBar } from './components/StatusBar'
 import { useLawStore } from './store/useLawStore'
 import { syncUrlToState, updateUrl } from './lib/url'
 import { setupKeyboardShortcuts } from './lib/keyboard'
-import { exportAsOpml, exportAsScrapbox, downloadAsFile } from './lib/export'
+import { exportAsOpml, exportAsScrapbox, exportAsMarkdown, downloadAsFile } from './lib/export'
 
 function App() {
   const viewMode = useLawStore((s) => s.viewMode)
@@ -51,6 +51,13 @@ function App() {
     const { lawTree, selectedLawTitle } = useLawStore.getState()
     const title = selectedLawTitle || '法令'
     downloadAsFile(exportAsOpml(lawTree, title), `${title}.opml`, 'text/xml')
+    setFileMenuOpen(false)
+  }
+
+  const handleMarkdown = () => {
+    const { lawTree, selectedLawTitle } = useLawStore.getState()
+    const title = selectedLawTitle || '法令'
+    downloadAsFile(exportAsMarkdown(lawTree, title), `${title}.md`, 'text/markdown')
     setFileMenuOpen(false)
   }
 
@@ -97,6 +104,12 @@ function App() {
             </button>
             {fileMenuOpen && (
               <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded shadow-lg z-50 whitespace-nowrap">
+                <button
+                  onClick={handleMarkdown}
+                  className="block w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100"
+                >
+                  Markdownダウンロード
+                </button>
                 <button
                   onClick={handleOpml}
                   className="block w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100"
