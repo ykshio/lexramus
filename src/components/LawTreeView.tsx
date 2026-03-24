@@ -26,6 +26,8 @@ function TreeNode({ node }: { node: LawTreeNode }) {
   const { expandedNodes, toggleNode, selectedLawId, useArabicNum, textSearchQuery, textSearchResultIds, textSearchActiveIndex } = useLawStore()
   const activeFilter = useTagStore((s) => s.activeFilter)
   const tags = useTagStore((s) => selectedLawId ? s.tags[selectedLawId]?.[node.id] : undefined)
+
+  if (node.type === 'toc') return null
   const hasChildren = node.children.length > 0
   const isExpanded = expandedNodes.has(node.id)
   const isStructural = STRUCTURAL_TYPES.includes(node.type)
@@ -42,9 +44,7 @@ function TreeNode({ node }: { node: LawTreeNode }) {
   let richTitle = node.richTitle
   const hasTitle = node.title.length > 0 || richTitle.length > 0
   if (!hasTitle) {
-    if (node.type === 'toc') {
-      richTitle = ['目次']
-    } else if (node.type === 'preamble') {
+    if (node.type === 'preamble') {
       richTitle = ['前文']
     }
   }
@@ -128,7 +128,7 @@ function TreeNode({ node }: { node: LawTreeNode }) {
 }
 
 export function LawTreeView() {
-  const { lawTree, lawLoading, lawError, selectedLawTitle } = useLawStore()
+  const { lawTree, lawLoading, lawError, selectedLawTitle, selectedLawNum } = useLawStore()
 
   if (lawLoading) {
     return (
@@ -158,6 +158,10 @@ export function LawTreeView() {
 
   return (
     <div className="p-3">
+      <div className="mb-3">
+        <h1 className="text-base font-bold text-gray-800">{selectedLawTitle}</h1>
+        {selectedLawNum && <p className="text-xs text-gray-500 mt-0.5">{selectedLawNum}</p>}
+      </div>
       {lawTree.map((node) => (
         <TreeNode key={node.id} node={node} />
       ))}

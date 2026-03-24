@@ -3,6 +3,7 @@ import type { LawTreeNode, LawNodeType, RevisionInfo, LawInfo, ExpandLevel } fro
 import type { LawType } from '../types/law'
 import { searchLaws, getLawData, getLawRevisions } from '../api/client'
 import { parseLawFullText } from '../lib/parser'
+import { convertToKanji } from '../lib/kansuji'
 
 interface SearchResult {
   law_info: LawInfo
@@ -195,12 +196,16 @@ function resolveExpandLevel(targetType: ExpandLevel, availableTypes: Set<LawNode
 function performTextSearch(nodes: LawTreeNode[], query: string): string[] {
   if (!query) return []
   const lowerQuery = query.toLowerCase()
+  // 算用数字を含む場合、漢数字版でも検索
+  const kanjiQuery = /\d/.test(query) ? convertToKanji(query).toLowerCase() : null
   const results: string[] = []
 
   function walk(node: LawTreeNode) {
-    const titleMatch = node.title.toLowerCase().includes(lowerQuery)
-    const contentMatch = node.content.toLowerCase().includes(lowerQuery)
-    if (titleMatch || contentMatch) {
+    const titleLower = node.title.toLowerCase()
+    const contentLower = node.content.toLowerCase()
+    const match = titleLower.includes(lowerQuery) || contentLower.includes(lowerQuery)
+    const kanjiMatch = kanjiQuery && (titleLower.includes(kanjiQuery) || contentLower.includes(kanjiQuery))
+    if (match || kanjiMatch) {
       results.push(node.id)
     }
     for (const child of node.children) walk(child)

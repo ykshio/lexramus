@@ -249,6 +249,9 @@ function BranchConnector({ index, total, extraWidth = 0 }: { index: number; tota
 
 function TreeBranch({ node, columnInfo }: { node: LawTreeNode; columnInfo: ColumnInfo }) {
   const expandedNodes = useLawStore((s) => s.expandedNodes)
+
+  if (node.type === 'toc') return null
+
   const hasChildren = node.children.length > 0
   const isExpanded = expandedNodes.has(node.id)
   const col = getColumnIndex(node.type, columnInfo.order)
@@ -289,7 +292,7 @@ function TreeBranch({ node, columnInfo }: { node: LawTreeNode; columnInfo: Colum
 }
 
 export function LawDiagramView() {
-  const { lawTree, lawLoading, lawError, selectedLawTitle, zoomLevel, setZoomLevel } = useLawStore()
+  const { lawTree, lawLoading, lawError, selectedLawTitle, selectedLawNum, zoomLevel, setZoomLevel } = useLawStore()
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Ctrl+ホイール / ピンチでズーム
@@ -364,6 +367,10 @@ export function LawDiagramView() {
           transformOrigin: 'top left',
         }}
       >
+        <div className="mb-4">
+          <h1 className="text-sm font-bold text-gray-800">{selectedLawTitle}</h1>
+          {selectedLawNum && <p className="text-xs text-gray-500 mt-0.5">{selectedLawNum}</p>}
+        </div>
         {lawTree.map((node) => (
           <div key={node.id} className="mb-4">
             <TreeBranch node={node} columnInfo={columnInfo} />

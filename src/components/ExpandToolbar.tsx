@@ -12,6 +12,7 @@ export function ExpandToolbar() {
     tocVisible, setTocVisible,
     useArabicNum, toggleArabicNum,
     zoomLevel, setZoomLevel,
+    isTextSearchOpen, openTextSearch,
   } = useLawStore()
   const { activeFilter, setActiveFilter } = useTagStore()
 
@@ -89,6 +90,21 @@ export function ExpandToolbar() {
           title="条文番号を算用数字に変換"
         >
           {useArabicNum ? '1,2,3' : '一,二,三'}
+        </button>
+
+        {/* テキスト検索ボタン */}
+        <button
+          onClick={openTextSearch}
+          className={`px-2 py-0.5 text-xs rounded border flex-shrink-0 ${
+            isTextSearchOpen
+              ? 'bg-blue-600 text-white border-blue-600'
+              : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+          }`}
+          title="テキスト検索 (Cmd+F)"
+        >
+          <svg className="w-3.5 h-3.5 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
         </button>
 
         {/* 展開レベル（プレーン以外） - デスクトップでは同一行 */}

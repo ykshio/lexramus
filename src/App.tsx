@@ -64,7 +64,7 @@ function App() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-white">
+    <div className="h-dvh flex flex-col bg-white">
       {/* ヘッダー */}
       <div className="flex items-center px-3 py-2 border-b border-gray-200 bg-white gap-2 flex-shrink-0">
         {/* 検索パネルトグル（モバイル・デスクトップ共通） */}

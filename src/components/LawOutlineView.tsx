@@ -149,7 +149,7 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
 }
 
 export function LawOutlineView() {
-  const { lawTree, lawLoading, lawError, selectedLawTitle } = useLawStore()
+  const { lawTree, lawLoading, lawError, selectedLawTitle, selectedLawNum } = useLawStore()
 
   if (lawLoading) {
     return (
@@ -181,6 +181,10 @@ export function LawOutlineView() {
 
   return (
     <div className="p-4 max-w-3xl mx-auto">
+      <div className="mb-4">
+        <h1 className="text-base font-bold text-gray-800">{selectedLawTitle}</h1>
+        {selectedLawNum && <p className="text-xs text-gray-500 mt-0.5">{selectedLawNum}</p>}
+      </div>
       {flat.map((node) => (
         <OutlineNode key={node.id} node={node} />
       ))}
