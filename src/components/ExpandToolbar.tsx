@@ -1,4 +1,3 @@
-import { useState, useRef, useEffect } from 'react'
 import { useLawStore } from '../store/useLawStore'
 import type { BracketMode } from '../store/useLawStore'
 import { useTagStore, TAG_COLORS } from '../store/useTagStore'
@@ -26,19 +25,6 @@ export function ExpandToolbar() {
     bracketMode, setBracketMode,
   } = useLawStore()
   const { activeFilter, setActiveFilter } = useTagStore()
-  const [bracketMenuOpen, setBracketMenuOpen] = useState(false)
-  const bracketMenuRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!bracketMenuOpen) return
-    const handleClick = (e: MouseEvent) => {
-      if (bracketMenuRef.current && !bracketMenuRef.current.contains(e.target as Node)) {
-        setBracketMenuOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [bracketMenuOpen])
 
   if (lawTree.length === 0) return null
 
@@ -132,36 +118,22 @@ export function ExpandToolbar() {
         </button>
 
         {/* 括弧表示モード */}
-        <div ref={bracketMenuRef} className="relative flex-shrink-0">
-          <button
-            onClick={() => setBracketMenuOpen(!bracketMenuOpen)}
-            className={`px-2 py-0.5 text-xs rounded border ${
-              bracketMode !== 'normal'
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'border-gray-300 text-gray-600 hover:bg-gray-100'
-            }`}
-            title="括弧内テキストの表示切替"
-          >
-            （）
-          </button>
-          {bracketMenuOpen && (
-            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded shadow-lg z-50 whitespace-nowrap">
-              {BRACKET_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => { setBracketMode(opt.value); setBracketMenuOpen(false) }}
-                  className={`block w-full text-left px-3 py-1.5 text-xs ${
-                    bracketMode === opt.value
-                      ? 'bg-blue-50 text-blue-700 font-medium'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <select
+          value={bracketMode}
+          onChange={(e) => setBracketMode(e.target.value as BracketMode)}
+          className={`px-1 py-0.5 text-xs rounded border flex-shrink-0 appearance-none cursor-pointer ${
+            bracketMode !== 'normal'
+              ? 'bg-blue-600 text-white border-blue-600'
+              : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+          }`}
+          title="括弧内テキストの表示切替"
+        >
+          {BRACKET_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              （）{opt.label}
+            </option>
+          ))}
+        </select>
 
         {/* 展開レベル（プレーン以外） - デスクトップでは同一行 */}
         {viewMode !== 'outline' && (
