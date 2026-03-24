@@ -34,3 +34,35 @@ React + TypeScript + Vite + Tailwind CSS + Zustand
 npm install
 npm run dev
 ```
+
+## ビルド
+
+```bash
+npm run build
+```
+
+`dist/` に静的ファイルが生成されます。
+
+## デプロイ
+
+### GitHub Pages（開発環境）
+
+```bash
+npm run build
+git add .
+git commit -m "Update"
+git push
+```
+
+GitHub Actions が自動的に GitHub Pages にデプロイします。
+確認：https://ykshio.github.io/lexramus/
+
+### さくらのレンタルサーバー（本番環境）
+
+```bash
+npm run build
+```
+
+GitHub リポジトリ → **Actions** タブ → **Deploy to Sakura Server** → **Run workflow** をクリック。
+
+確認：https://law.shioz.app
