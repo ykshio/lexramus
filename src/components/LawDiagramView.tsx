@@ -186,7 +186,7 @@ function DiagramNode({ node, width }: { node: LawTreeNode; width: number }) {
         hover:ring-1 hover:ring-inset hover:ring-gray-400
         ${searchHighlight}
       `}
-      style={textExpanded ? { minWidth: `${width}px`, maxWidth: '600px' } : { width: `${width}px` }}
+      style={{ width: `${width}px` }}
       title={!textExpanded ? displayText : undefined}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
