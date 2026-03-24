@@ -39,10 +39,20 @@ function collectArticles(nodes: LawTreeNode[]): Map<string, LawTreeNode> {
   return map
 }
 
+// ノードとその子孫の全テキストを結合
+function collectAllText(node: LawTreeNode): string {
+  let text = node.content
+  for (const child of node.children) {
+    const childText = collectAllText(child)
+    if (childText) text += ' ' + childText
+  }
+  return text
+}
+
 // 施行令ツリーから article ノードを走査
-function walkArticles(nodes: LawTreeNode[], cb: (node: LawTreeNode) => void) {
+function walkArticles(nodes: LawTreeNode[], cb: (node: LawTreeNode, fullText: string) => void) {
   function walk(node: LawTreeNode) {
-    if (node.type === 'article') cb(node)
+    if (node.type === 'article') cb(node, collectAllText(node))
     for (const c of node.children) walk(c)
   }
   for (const n of nodes) walk(n)
@@ -76,8 +86,8 @@ export function injectRefLinks(
 
   for (const rl of relatedLaws) {
     const label = rl.title.includes('施行規則') ? '施行規則' : '施行令'
-    walkArticles(rl.tree, (articleNode) => {
-      const refs = extractArticleRefs(articleNode.content)
+    walkArticles(rl.tree, (articleNode, fullText) => {
+      const refs = extractArticleRefs(fullText)
       for (const ref of refs) {
         const parentArticle = parentArticles.get(ref.num)
         if (!parentArticle) continue
