@@ -21,6 +21,9 @@ export function setupKeyboardShortcuts() {
     // 入力中は他のショートカット無効
     if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
 
+    // 修飾キー付きはブラウザデフォルト動作を優先（Cmd+C, Cmd+V 等）
+    if (isMod) return
+
     const store = useLawStore.getState()
 
     switch (e.key) {
