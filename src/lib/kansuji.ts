@@ -7,7 +7,7 @@ const KANJI_MULTIPLIERS: Record<string, number> = {
   十: 10, 百: 100, 千: 1000,
 }
 
-function kanjiToNumber(kanji: string): number {
+export function kanjiToNumber(kanji: string): number {
   let num = 0
   let tmp = 0
 

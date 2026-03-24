@@ -28,6 +28,28 @@ function TreeNode({ node }: { node: LawTreeNode }) {
   const tags = useTagStore((s) => selectedLawId ? s.tags[selectedLawId]?.[node.id] : undefined)
 
   if (node.type === 'toc') return null
+
+  // ref_link ノード: クリックで施行令に遷移
+  if (node.type === 'ref_link' && node.refTarget) {
+    const handleRefClick = () => {
+      const { refTarget } = node
+      if (!refTarget) return
+      useLawStore.setState({ pendingScrollTarget: refTarget.nodeId })
+      useLawStore.getState().selectLaw(refTarget.lawId, refTarget.lawTitle, refTarget.lawNum)
+    }
+    return (
+      <div id={`law-node-${node.id}`} style={{ paddingLeft: node.depth * INDENT_PX }}>
+        <div
+          className="flex items-center gap-1 py-0.5 cursor-pointer text-blue-600 hover:text-blue-800 hover:underline text-sm"
+          onClick={handleRefClick}
+        >
+          <span className="w-4 flex-shrink-0" />
+          <span>{node.title}</span>
+        </div>
+      </div>
+    )
+  }
+
   const hasChildren = node.children.length > 0
   const isExpanded = expandedNodes.has(node.id)
   const isStructural = STRUCTURAL_TYPES.includes(node.type)
@@ -128,7 +150,7 @@ function TreeNode({ node }: { node: LawTreeNode }) {
 }
 
 export function LawTreeView() {
-  const { lawTree, lawLoading, lawError, selectedLawTitle, selectedLawNum, relatedLaws, relatedLawsLoading } = useLawStore()
+  const { lawTree, lawLoading, lawError, selectedLawTitle, selectedLawNum, relatedLawsLoading } = useLawStore()
 
   if (lawLoading) {
     return (
@@ -168,20 +190,6 @@ export function LawTreeView() {
       {relatedLawsLoading && (
         <p className="text-xs text-gray-400 mt-4">関連法令を読み込み中...</p>
       )}
-      {relatedLaws.map((rl) => (
-        <div key={rl.lawId} className="mt-6 border-t-2 border-blue-200 pt-3">
-          <div className="mb-2">
-            <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium mr-1.5">
-              {rl.title.includes('施行規則') ? '施行規則' : '施行令'}
-            </span>
-            <span className="text-sm font-bold text-gray-700">{rl.title}</span>
-            <p className="text-xs text-gray-500 mt-0.5">{rl.lawNum}</p>
-          </div>
-          {rl.tree.map((node) => (
-            <TreeNode key={node.id} node={node} />
-          ))}
-        </div>
-      ))}
     </div>
   )
 }

@@ -251,10 +251,39 @@ function BranchConnector({ index, total, extraWidth = 0 }: { index: number; tota
   )
 }
 
+function RefLinkNode({ node }: { node: LawTreeNode }) {
+  const handleClick = () => {
+    const { refTarget } = node
+    if (!refTarget) return
+    useLawStore.setState({ pendingScrollTarget: refTarget.nodeId })
+    useLawStore.getState().selectLaw(refTarget.lawId, refTarget.lawTitle, refTarget.lawNum)
+  }
+  return (
+    <div
+      id={`law-node-${node.id}`}
+      className="px-2 py-1 rounded-lg text-xs cursor-pointer select-none min-h-[36px] flex items-center text-blue-600 hover:text-blue-800 hover:underline border border-blue-200 bg-blue-50"
+      style={{ width: `${MIN_NODE_WIDTH + 40}px` }}
+      onClick={handleClick}
+    >
+      {node.title}
+    </div>
+  )
+}
+
 function TreeBranch({ node, columnInfo }: { node: LawTreeNode; columnInfo: ColumnInfo }) {
   const expandedNodes = useLawStore((s) => s.expandedNodes)
 
   if (node.type === 'toc') return null
+
+  if (node.type === 'ref_link') {
+    return (
+      <div className="flex items-start">
+        <div className="shrink-0 relative">
+          <RefLinkNode node={node} />
+        </div>
+      </div>
+    )
+  }
 
   const hasChildren = node.children.length > 0
   const isExpanded = expandedNodes.has(node.id)
@@ -296,7 +325,7 @@ function TreeBranch({ node, columnInfo }: { node: LawTreeNode; columnInfo: Colum
 }
 
 export function LawDiagramView() {
-  const { lawTree, lawLoading, lawError, selectedLawTitle, selectedLawNum, zoomLevel, setZoomLevel, relatedLaws, relatedLawsLoading } = useLawStore()
+  const { lawTree, lawLoading, lawError, selectedLawTitle, selectedLawNum, zoomLevel, setZoomLevel, relatedLawsLoading } = useLawStore()
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Ctrl+ホイール / ピンチでズーム
@@ -383,25 +412,6 @@ export function LawDiagramView() {
         {relatedLawsLoading && (
           <p className="text-xs text-gray-400 mt-4">関連法令を読み込み中...</p>
         )}
-        {relatedLaws.map((rl) => {
-          const rlColumnInfo = calculateColumnInfo(rl.tree)
-          return (
-            <div key={rl.lawId} className="mt-8 border-t-2 border-blue-200 pt-4">
-              <div className="mb-3">
-                <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium mr-1.5">
-                  {rl.title.includes('施行規則') ? '施行規則' : '施行令'}
-                </span>
-                <span className="text-sm font-bold text-gray-700">{rl.title}</span>
-                <p className="text-xs text-gray-500 mt-0.5">{rl.lawNum}</p>
-              </div>
-              {rl.tree.map((node) => (
-                <div key={node.id} className="mb-4">
-                  <TreeBranch node={node} columnInfo={rlColumnInfo} />
-                </div>
-              ))}
-            </div>
-          )
-        })}
       </div>
     </div>
   )

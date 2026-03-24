@@ -4,6 +4,7 @@ import type { LawType } from '../types/law'
 import { searchLaws, getLawData, getLawRevisions } from '../api/client'
 import { parseLawFullText } from '../lib/parser'
 import { replaceArabicWithKanji } from '../lib/kansuji'
+import { injectRefLinks } from '../lib/reflink'
 
 interface SearchResult {
   law_info: LawInfo
@@ -54,6 +55,9 @@ interface LawStore {
 
   // 閲覧履歴
   lawHistory: { lawId: string; title: string; lawNum: string }[]
+
+  // 遷移後スクロール先
+  pendingScrollTarget: string | null
 
   // ツリー内テキスト検索
   isTextSearchOpen: boolean
@@ -263,6 +267,8 @@ export const useLawStore = create<LawStore>((set, get) => ({
 
   lawHistory: [],
 
+  pendingScrollTarget: null,
+
   isTextSearchOpen: false,
   textSearchQuery: '',
   textSearchResultIds: [],
@@ -331,12 +337,24 @@ export const useLawStore = create<LawStore>((set, get) => ({
         expandLevel: 'chapter',
         availableTypes: available,
       })
+      // pendingScrollTarget があれば展開してスクロール
+      const { pendingScrollTarget } = get()
+      if (pendingScrollTarget) {
+        // ターゲットの親ノードも展開する
+        const expandedWithTarget = new Set(expanded)
+        expandedWithTarget.add(pendingScrollTarget)
+        set({ expandedNodes: expandedWithTarget, pendingScrollTarget: null })
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => get().scrollToNode(pendingScrollTarget))
+        })
+      }
       get().loadRevisions()
       get().loadRelatedLaws()
     } catch (e) {
       set({
         lawError: e instanceof Error ? e.message : '法令の取得に失敗しました',
         lawLoading: false,
+        pendingScrollTarget: null,
       })
     }
   },
@@ -457,7 +475,11 @@ export const useLawStore = create<LawStore>((set, get) => ({
           }
         })
       )
-      set({ relatedLaws: results.filter((r): r is NonNullable<typeof r> => r !== null), relatedLawsLoading: false })
+      const relatedLaws = results.filter((r): r is NonNullable<typeof r> => r !== null)
+      // 親ツリーにリンクノードを挿入
+      const { lawTree } = get()
+      const newTree = injectRefLinks(lawTree, relatedLaws)
+      set({ relatedLaws, relatedLawsLoading: false, lawTree: newTree })
     } catch {
       set({ relatedLawsLoading: false })
     }

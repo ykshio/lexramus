@@ -116,6 +116,7 @@ export interface LawTreeNode {
   richContent: RichSegment[]
   children: LawTreeNode[]
   depth: number
+  refTarget?: { lawId: string; lawNum: string; lawTitle: string; nodeId: string }
 }
 
 export type LawNodeType =
@@ -135,6 +136,7 @@ export type LawNodeType =
   | 'toc'        // 目次
   | 'preamble'   // 前文
   | 'related_law' // 関連法令ルート
+  | 'ref_link'    // 施行令/施行規則へのリンクノード
   | 'unknown'
 
 export const LAW_TYPE_LABELS: Record<LawType, string> = {

@@ -64,6 +64,25 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
 
   if (node.type === 'toc') return null
 
+  if (node.type === 'ref_link' && node.refTarget) {
+    const handleRefClick = () => {
+      const { refTarget } = node
+      if (!refTarget) return
+      useLawStore.setState({ pendingScrollTarget: refTarget.nodeId })
+      useLawStore.getState().selectLaw(refTarget.lawId, refTarget.lawTitle, refTarget.lawNum)
+    }
+    return (
+      <div id={`law-node-${node.id}`} className="ml-4 mt-0.5">
+        <span
+          className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer hover:underline"
+          onClick={handleRefClick}
+        >
+          {node.title}
+        </span>
+      </div>
+    )
+  }
+
   if (isStructural) {
     const style = DEPTH_STYLES[node.depth] ?? 'text-sm font-medium text-gray-600 mt-2'
     return (
@@ -150,7 +169,7 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
 }
 
 export function LawOutlineView() {
-  const { lawTree, lawLoading, lawError, selectedLawTitle, selectedLawNum, relatedLaws, relatedLawsLoading } = useLawStore()
+  const { lawTree, lawLoading, lawError, selectedLawTitle, selectedLawNum, relatedLawsLoading } = useLawStore()
 
   if (lawLoading) {
     return (
@@ -192,23 +211,6 @@ export function LawOutlineView() {
       {relatedLawsLoading && (
         <p className="text-xs text-gray-400 mt-4">関連法令を読み込み中...</p>
       )}
-      {relatedLaws.map((rl) => {
-        const rlFlat = flattenNodes(rl.tree)
-        return (
-          <div key={rl.lawId} className="mt-8 border-t-2 border-blue-200 pt-4">
-            <div className="mb-3">
-              <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium mr-1.5">
-                {rl.title.includes('施行規則') ? '施行規則' : '施行令'}
-              </span>
-              <span className="text-base font-bold text-gray-700">{rl.title}</span>
-              <p className="text-xs text-gray-500 mt-0.5">{rl.lawNum}</p>
-            </div>
-            {rlFlat.map((node) => (
-              <OutlineNode key={node.id} node={node} />
-            ))}
-          </div>
-        )
-      })}
     </div>
   )
 }
