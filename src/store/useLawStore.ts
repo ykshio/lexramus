@@ -54,7 +54,7 @@ interface LawStore {
   relatedLawsLoading: boolean
 
   // 閲覧履歴
-  lawHistory: { lawId: string; title: string; lawNum: string }[]
+  lawHistory: { lawId: string; title: string; lawNum: string; scrollTop: number }[]
 
   // 遷移後スクロール先
   pendingScrollTarget: string | null
@@ -307,9 +307,11 @@ export const useLawStore = create<LawStore>((set, get) => ({
 
   selectLaw: async (lawId, title, lawNum) => {
     const { asof, selectedLawId, selectedLawTitle, selectedLawNum, lawHistory } = get()
-    // 現在表示中の法令を履歴に保存
+    // 現在表示中の法令を履歴に保存（スクロール位置含む）
     if (selectedLawId && selectedLawTitle && selectedLawNum !== null) {
-      set({ lawHistory: [...lawHistory, { lawId: selectedLawId, title: selectedLawTitle, lawNum: selectedLawNum ?? '' }] })
+      const scrollEl = document.getElementById('main-scroll-container')
+      const scrollTop = scrollEl?.scrollTop ?? 0
+      set({ lawHistory: [...lawHistory, { lawId: selectedLawId, title: selectedLawTitle, lawNum: selectedLawNum ?? '', scrollTop }] })
     }
     set({
       selectedLawId: lawId,
@@ -511,6 +513,11 @@ export const useLawStore = create<LawStore>((set, get) => ({
       const available = collectAvailableTypes(tree)
       const expanded = collectExpandedIds(tree, 'chapter')
       set({ lawTree: tree, lawLoading: false, expandedNodes: expanded, expandLevel: 'chapter', availableTypes: available })
+      // スクロール位置を復元
+      requestAnimationFrame(() => {
+        const scrollEl = document.getElementById('main-scroll-container')
+        if (scrollEl) scrollEl.scrollTop = prev.scrollTop
+      })
       get().loadRevisions()
       get().loadRelatedLaws()
     }).catch(e => {

@@ -159,8 +159,10 @@ function extractRichTitle(element: LawElement): RichSegment[] {
   return []
 }
 
-// 法令参照パターン: 法令名（元号N年法律第N号）
-const LAW_REF_RE = /([^\s、。（）「」]+?(?:法律|法|政令|省令|規則|条例))（((?:明治|大正|昭和|平成|令和)[^）]+?号)）/g
+// 法令参照パターン
+// 1) 法令名（元号N年法律第N号）
+// 2) 法令名（以下「…」という。）
+const LAW_REF_RE = /([^\s、。（）「」]+?(?:法律|法|政令|省令|規則|条例))（(?:(?:明治|大正|昭和|平成|令和)[^）]+?号|以下[^）]+?)）/g
 
 function detectLawRefs(segments: RichSegment[]): RichSegment[] {
   const result: RichSegment[] = []
