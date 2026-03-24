@@ -1,8 +1,9 @@
 import { Fragment, useState, type ReactNode } from 'react'
 import type { RichSegment } from '../types/law'
-import type { BracketMode } from '../store/useLawStore'
+import { useLawStore, type BracketMode } from '../store/useLawStore'
 import { convertToArabic } from './kansuji'
 import { highlightText } from './highlight'
+import { searchLaws } from '../api/client'
 
 interface RubyTextProps {
   segments: RichSegment[]
@@ -33,6 +34,38 @@ function BracketSpan({ text, mode }: { text: string; mode: BracketMode }) {
       className="text-gray-400 cursor-pointer hover:text-gray-500"
       onClick={() => setExpanded(true)}
     >(…)</span>
+  )
+}
+
+function LawRefLink({ text, lawTitle }: { text: string; lawTitle: string }) {
+  const [loading, setLoading] = useState(false)
+
+  const handleClick = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (loading) return
+    setLoading(true)
+    try {
+      const res = await searchLaws({ law_title: lawTitle, limit: 10 })
+      const exact = res.laws.find(l => l.revision_info.law_title === lawTitle)
+      const target = exact ?? res.laws[0]
+      if (target) {
+        useLawStore.getState().selectLaw(target.law_info.law_id, target.revision_info.law_title, target.law_info.law_num)
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <span
+      className={`text-blue-600 underline decoration-blue-300 cursor-pointer hover:text-blue-800 ${loading ? 'opacity-50' : ''}`}
+      onClick={handleClick}
+      title={`${lawTitle}を開く`}
+    >
+      {text}
+    </span>
   )
 }
 
@@ -78,7 +111,11 @@ export function RubyText({ segments, searchQuery, arabicNum, bracketMode = 'norm
 
   // 検索時はプレーンテキスト+ハイライトにフォールバック
   if (searchQuery) {
-    let plain = segments.map(s => typeof s === 'string' ? s : s.rb).join('')
+    let plain = segments.map(s => {
+      if (typeof s === 'string') return s
+      if ('rb' in s) return s.rb
+      return s.text
+    }).join('')
     if (arabicNum) plain = convertToArabic(plain)
     return <>{applyBracketToHighlighted(plain, searchQuery, bracketMode)}</>
   }
@@ -90,12 +127,15 @@ export function RubyText({ segments, searchQuery, arabicNum, bracketMode = 'norm
           const text = arabicNum ? convertToArabic(seg) : seg
           return <Fragment key={i}>{applyBracketMode(text, bracketMode)}</Fragment>
         }
-        return (
-          <ruby key={i}>
-            {arabicNum ? convertToArabic(seg.rb) : seg.rb}
-            <rp>(</rp><rt>{seg.rt}</rt><rp>)</rp>
-          </ruby>
-        )
+        if ('rb' in seg) {
+          return (
+            <ruby key={i}>
+              {arabicNum ? convertToArabic(seg.rb) : seg.rb}
+              <rp>(</rp><rt>{seg.rt}</rt><rp>)</rp>
+            </ruby>
+          )
+        }
+        return <LawRefLink key={i} text={seg.text} lawTitle={seg.lawTitle} />
       })}
     </>
   )

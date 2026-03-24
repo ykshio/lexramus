@@ -84,7 +84,11 @@ function parseNode(element: LawElement, type: LawNodeType, parentPath: string, d
 }
 
 function richToPlain(segments: RichSegment[]): string {
-  return segments.map(s => typeof s === 'string' ? s : s.rb).join('')
+  return segments.map(s => {
+    if (typeof s === 'string') return s
+    if ('rb' in s) return s.rb
+    return s.text
+  }).join('')
 }
 
 function extractNum(element: LawElement): string {
@@ -155,6 +159,33 @@ function extractRichTitle(element: LawElement): RichSegment[] {
   return []
 }
 
+// 法令参照パターン: 法令名（元号N年法律第N号）
+const LAW_REF_RE = /([^\s、。（）「」]+?(?:法|政令|省令|規則|条例))（((?:明治|大正|昭和|平成|令和)[^）]+?号)）/g
+
+function detectLawRefs(segments: RichSegment[]): RichSegment[] {
+  const result: RichSegment[] = []
+  for (const seg of segments) {
+    if (typeof seg !== 'string') {
+      result.push(seg)
+      continue
+    }
+    let lastIndex = 0
+    LAW_REF_RE.lastIndex = 0
+    let match
+    while ((match = LAW_REF_RE.exec(seg)) !== null) {
+      if (match.index > lastIndex) {
+        result.push(seg.slice(lastIndex, match.index))
+      }
+      result.push({ type: 'law_ref', text: match[0], lawTitle: match[1] })
+      lastIndex = LAW_REF_RE.lastIndex
+    }
+    if (lastIndex < seg.length) {
+      result.push(seg.slice(lastIndex))
+    }
+  }
+  return result
+}
+
 function extractRichContent(element: LawElement): RichSegment[] {
   const segments: RichSegment[] = []
   for (const child of element.children) {
@@ -168,7 +199,7 @@ function extractRichContent(element: LawElement): RichSegment[] {
       segments.push(...extractRichText(child))
     }
   }
-  return segments
+  return detectLawRefs(segments)
 }
 
 function extractText(element: LawElement): string {

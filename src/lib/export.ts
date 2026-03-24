@@ -17,7 +17,11 @@ const TYPE_ORDER: Record<string, number> = {
 }
 
 function richSegmentsToText(segments: RichSegment[]): string {
-  return segments.map(s => typeof s === 'string' ? s : s.rb).join('')
+  return segments.map(s => {
+    if (typeof s === 'string') return s
+    if ('rb' in s) return s.rb
+    return s.text
+  }).join('')
 }
 
 function escapeXml(s: string): string {

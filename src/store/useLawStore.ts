@@ -48,6 +48,10 @@ interface LawStore {
   revisions: RevisionInfo[]
   revisionsLoading: boolean
 
+  // 関連法令（施行令・施行規則）
+  relatedLaws: { title: string; lawId: string; lawNum: string; tree: LawTreeNode[] }[]
+  relatedLawsLoading: boolean
+
   // ツリー内テキスト検索
   isTextSearchOpen: boolean
   textSearchQuery: string
@@ -70,6 +74,7 @@ interface LawStore {
   toggleArabicNum: () => void
   setBracketMode: (mode: BracketMode) => void
   setZoomLevel: (level: number) => void
+  loadRelatedLaws: () => Promise<void>
 
   // テキスト検索アクション
   openTextSearch: () => void
@@ -248,6 +253,9 @@ export const useLawStore = create<LawStore>((set, get) => ({
   revisions: [],
   revisionsLoading: false,
 
+  relatedLaws: [],
+  relatedLawsLoading: false,
+
   isTextSearchOpen: false,
   textSearchQuery: '',
   textSearchResultIds: [],
@@ -297,6 +305,8 @@ export const useLawStore = create<LawStore>((set, get) => ({
       expandLevel: null,
       availableTypes: new Set(),
       revisions: [],
+      relatedLaws: [],
+      relatedLawsLoading: false,
     })
     try {
       const res = await getLawData(lawId, asof ?? undefined)
@@ -311,6 +321,7 @@ export const useLawStore = create<LawStore>((set, get) => ({
         availableTypes: available,
       })
       get().loadRevisions()
+      get().loadRelatedLaws()
     } catch (e) {
       set({
         lawError: e instanceof Error ? e.message : '法令の取得に失敗しました',
@@ -410,6 +421,34 @@ export const useLawStore = create<LawStore>((set, get) => ({
       set({ revisions: res.revisions, revisionsLoading: false })
     } catch {
       set({ revisionsLoading: false })
+    }
+  },
+
+  loadRelatedLaws: async () => {
+    const { selectedLawId, selectedLawTitle, asof } = get()
+    if (!selectedLawId || !selectedLawTitle) return
+    set({ relatedLawsLoading: true })
+    try {
+      const res = await searchLaws({ law_title: selectedLawTitle, limit: 20 })
+      const related = res.laws.filter(l =>
+        l.law_info.law_id !== selectedLawId &&
+        l.revision_info.law_title.startsWith(selectedLawTitle) &&
+        (l.revision_info.law_title.includes('施行令') || l.revision_info.law_title.includes('施行規則'))
+      )
+      const results = await Promise.all(
+        related.map(async (l) => {
+          try {
+            const data = await getLawData(l.law_info.law_id, asof ?? undefined)
+            const tree = parseLawFullText(data.law_full_text)
+            return { title: l.revision_info.law_title, lawId: l.law_info.law_id, lawNum: l.law_info.law_num, tree }
+          } catch {
+            return null
+          }
+        })
+      )
+      set({ relatedLaws: results.filter((r): r is NonNullable<typeof r> => r !== null), relatedLawsLoading: false })
+    } catch {
+      set({ relatedLawsLoading: false })
     }
   },
 

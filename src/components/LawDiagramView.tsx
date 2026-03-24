@@ -296,7 +296,7 @@ function TreeBranch({ node, columnInfo }: { node: LawTreeNode; columnInfo: Colum
 }
 
 export function LawDiagramView() {
-  const { lawTree, lawLoading, lawError, selectedLawTitle, selectedLawNum, zoomLevel, setZoomLevel } = useLawStore()
+  const { lawTree, lawLoading, lawError, selectedLawTitle, selectedLawNum, zoomLevel, setZoomLevel, relatedLaws, relatedLawsLoading } = useLawStore()
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Ctrl+ホイール / ピンチでズーム
@@ -380,6 +380,28 @@ export function LawDiagramView() {
             <TreeBranch node={node} columnInfo={columnInfo} />
           </div>
         ))}
+        {relatedLawsLoading && (
+          <p className="text-xs text-gray-400 mt-4">関連法令を読み込み中...</p>
+        )}
+        {relatedLaws.map((rl) => {
+          const rlColumnInfo = calculateColumnInfo(rl.tree)
+          return (
+            <div key={rl.lawId} className="mt-8 border-t-2 border-blue-200 pt-4">
+              <div className="mb-3">
+                <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium mr-1.5">
+                  {rl.title.includes('施行規則') ? '施行規則' : '施行令'}
+                </span>
+                <span className="text-sm font-bold text-gray-700">{rl.title}</span>
+                <p className="text-xs text-gray-500 mt-0.5">{rl.lawNum}</p>
+              </div>
+              {rl.tree.map((node) => (
+                <div key={node.id} className="mb-4">
+                  <TreeBranch node={node} columnInfo={rlColumnInfo} />
+                </div>
+              ))}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

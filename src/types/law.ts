@@ -100,7 +100,10 @@ export interface LawRevisionsResponse {
 }
 
 // ルビ付きテキストセグメント
-export type RichSegment = string | { rb: string; rt: string }
+export type RichSegment =
+  | string
+  | { rb: string; rt: string }
+  | { type: 'law_ref'; text: string; lawTitle: string }
 
 // アプリ内部で使用する法令ツリーノード
 export interface LawTreeNode {
@@ -131,6 +134,7 @@ export type LawNodeType =
   | 'suppl_group'     // 附則グループ
   | 'toc'        // 目次
   | 'preamble'   // 前文
+  | 'related_law' // 関連法令ルート
   | 'unknown'
 
 export const LAW_TYPE_LABELS: Record<LawType, string> = {
