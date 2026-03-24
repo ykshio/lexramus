@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { useLawStore } from '../store/useLawStore'
 import { useTagStore, TAG_COLORS } from '../store/useTagStore'
 import { TagPicker } from './TagPicker'
+import { LawPopup } from './LawPopup'
 import { RubyText } from '../lib/rubyText'
 import type { LawTreeNode, LawNodeType } from '../types/law'
 
@@ -40,6 +42,32 @@ function getTagBgClass(lawId: string | null, nodeId: string): string {
   return color ? color.bg : ''
 }
 
+function RefLinkPopup({ node }: { node: LawTreeNode }) {
+  const [showPopup, setShowPopup] = useState(false)
+  const { refTarget } = node
+  if (!refTarget) return null
+
+  return (
+    <div id={`law-node-${node.id}`} className="ml-4 mt-0.5 relative inline-block">
+      <span
+        className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer hover:underline"
+        onClick={() => setShowPopup(!showPopup)}
+      >
+        {node.title}
+      </span>
+      {showPopup && (
+        <LawPopup
+          lawId={refTarget.lawId}
+          lawTitle={refTarget.lawTitle}
+          lawNum={refTarget.lawNum}
+          targetNodeId={refTarget.nodeId}
+          onClose={() => setShowPopup(false)}
+        />
+      )}
+    </div>
+  )
+}
+
 function OutlineNode({ node }: { node: LawTreeNode }) {
   const selectedLawId = useLawStore((s) => s.selectedLawId)
   const useArabicNum = useLawStore((s) => s.useArabicNum)
@@ -65,22 +93,7 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
   if (node.type === 'toc') return null
 
   if (node.type === 'ref_link' && node.refTarget) {
-    const handleRefClick = () => {
-      const { refTarget } = node
-      if (!refTarget) return
-      useLawStore.setState({ pendingScrollTarget: refTarget.nodeId })
-      useLawStore.getState().selectLaw(refTarget.lawId, refTarget.lawTitle, refTarget.lawNum)
-    }
-    return (
-      <div id={`law-node-${node.id}`} className="ml-4 mt-0.5">
-        <span
-          className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer hover:underline"
-          onClick={handleRefClick}
-        >
-          {node.title}
-        </span>
-      </div>
-    )
+    return <RefLinkPopup node={node} />
   }
 
   if (isStructural) {

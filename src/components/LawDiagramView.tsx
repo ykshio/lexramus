@@ -4,6 +4,7 @@ import { useTagStore, TAG_COLORS } from '../store/useTagStore'
 import { TagPicker } from './TagPicker'
 import { convertToArabic } from '../lib/kansuji'
 import { applyBracketMode, applyBracketToHighlighted } from '../lib/rubyText'
+import { LawPopup } from './LawPopup'
 import type { LawTreeNode, LawNodeType } from '../types/law'
 
 const NODE_CENTER = 18
@@ -255,20 +256,29 @@ function BranchConnector({ index, total, extraWidth = 0 }: { index: number; tota
 }
 
 function RefLinkNode({ node }: { node: LawTreeNode }) {
-  const handleClick = () => {
-    const { refTarget } = node
-    if (!refTarget) return
-    useLawStore.setState({ pendingScrollTarget: refTarget.nodeId })
-    useLawStore.getState().selectLaw(refTarget.lawId, refTarget.lawTitle, refTarget.lawNum)
-  }
+  const [showPopup, setShowPopup] = useState(false)
+  const { refTarget } = node
+  if (!refTarget) return null
+
   return (
-    <div
-      id={`law-node-${node.id}`}
-      className="px-2 py-1 rounded-lg text-xs cursor-pointer select-none min-h-[36px] flex items-center text-blue-600 hover:text-blue-800 hover:underline border border-blue-200 bg-blue-50"
-      style={{ width: `${MIN_NODE_WIDTH + 40}px` }}
-      onClick={handleClick}
-    >
-      {node.title}
+    <div className="relative inline-block">
+      <div
+        id={`law-node-${node.id}`}
+        className="px-2 py-1 rounded-lg text-xs cursor-pointer select-none min-h-[36px] flex items-center text-blue-600 hover:text-blue-800 hover:underline border border-blue-200 bg-blue-50"
+        style={{ width: `${MIN_NODE_WIDTH + 40}px` }}
+        onClick={() => setShowPopup(!showPopup)}
+      >
+        {node.title}
+      </div>
+      {showPopup && (
+        <LawPopup
+          lawId={refTarget.lawId}
+          lawTitle={refTarget.lawTitle}
+          lawNum={refTarget.lawNum}
+          targetNodeId={refTarget.nodeId}
+          onClose={() => setShowPopup(false)}
+        />
+      )}
     </div>
   )
 }

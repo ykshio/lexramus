@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { useLawStore } from '../store/useLawStore'
 import { useTagStore, TAG_COLORS } from '../store/useTagStore'
 import { TagPicker } from './TagPicker'
+import { LawPopup } from './LawPopup'
 import { RubyText } from '../lib/rubyText'
 import type { LawTreeNode, LawNodeType } from '../types/law'
 
@@ -22,6 +24,35 @@ function getTagBgClass(lawId: string | null, nodeId: string): string {
   return color ? color.bg : ''
 }
 
+function RefLinkPopup({ node, depth }: { node: LawTreeNode; depth: number }) {
+  const [showPopup, setShowPopup] = useState(false)
+  const { refTarget } = node
+  if (!refTarget) return null
+
+  return (
+    <div id={`law-node-${node.id}`} style={{ paddingLeft: depth * INDENT_PX }}>
+      <div className="relative inline-block">
+        <div
+          className="flex items-center gap-1 py-0.5 cursor-pointer text-blue-600 hover:text-blue-800 hover:underline text-sm"
+          onClick={() => setShowPopup(!showPopup)}
+        >
+          <span className="w-4 flex-shrink-0" />
+          <span>{node.title}</span>
+        </div>
+        {showPopup && (
+          <LawPopup
+            lawId={refTarget.lawId}
+            lawTitle={refTarget.lawTitle}
+            lawNum={refTarget.lawNum}
+            targetNodeId={refTarget.nodeId}
+            onClose={() => setShowPopup(false)}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
 function TreeNode({ node }: { node: LawTreeNode }) {
   const { expandedNodes, toggleNode, selectedLawId, useArabicNum, bracketMode, textSearchQuery, textSearchResultIds, textSearchActiveIndex } = useLawStore()
   const activeFilter = useTagStore((s) => s.activeFilter)
@@ -29,25 +60,9 @@ function TreeNode({ node }: { node: LawTreeNode }) {
 
   if (node.type === 'toc') return null
 
-  // ref_link ノード: クリックで施行令に遷移
+  // ref_link ノード: ポップアッププレビュー
   if (node.type === 'ref_link' && node.refTarget) {
-    const handleRefClick = () => {
-      const { refTarget } = node
-      if (!refTarget) return
-      useLawStore.setState({ pendingScrollTarget: refTarget.nodeId })
-      useLawStore.getState().selectLaw(refTarget.lawId, refTarget.lawTitle, refTarget.lawNum)
-    }
-    return (
-      <div id={`law-node-${node.id}`} style={{ paddingLeft: node.depth * INDENT_PX }}>
-        <div
-          className="flex items-center gap-1 py-0.5 cursor-pointer text-blue-600 hover:text-blue-800 hover:underline text-sm"
-          onClick={handleRefClick}
-        >
-          <span className="w-4 flex-shrink-0" />
-          <span>{node.title}</span>
-        </div>
-      </div>
-    )
+    return <RefLinkPopup node={node} depth={node.depth} />
   }
 
   const hasChildren = node.children.length > 0
