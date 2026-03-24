@@ -181,8 +181,9 @@ export function LawTreeView() {
   return (
     <div className="p-3">
       <div className="mb-3">
-        <h1 className="text-base font-bold text-gray-800">{selectedLawTitle}</h1>
-        {selectedLawNum && <p className="text-xs text-gray-500 mt-0.5">{selectedLawNum}</p>}
+        <h1 className="text-base font-bold text-gray-800">
+          {selectedLawTitle}{selectedLawNum && <span className="text-xs font-normal text-gray-500 ml-1">（{selectedLawNum}）</span>}
+        </h1>
       </div>
       {lawTree.map((node) => (
         <TreeNode key={node.id} node={node} />

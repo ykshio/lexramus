@@ -152,7 +152,10 @@ function DiagramNode({ node, width }: { node: LawTreeNode; width: number }) {
 
   const handleClick = () => {
     if (hasChildren) {
+      const willExpand = !expandedNodes.has(node.id)
       toggleNode(node.id)
+      // 子ノード展開時にテキストも同時展開
+      if (node.content) setTextExpanded(willExpand)
     } else if (node.content) {
       setTextExpanded(!textExpanded)
     }
@@ -401,8 +404,9 @@ export function LawDiagramView() {
         }}
       >
         <div className="mb-4">
-          <h1 className="text-sm font-bold text-gray-800">{selectedLawTitle}</h1>
-          {selectedLawNum && <p className="text-xs text-gray-500 mt-0.5">{selectedLawNum}</p>}
+          <h1 className="text-sm font-bold text-gray-800">
+            {selectedLawTitle}{selectedLawNum && <span className="text-xs font-normal text-gray-500 ml-1">（{selectedLawNum}）</span>}
+          </h1>
         </div>
         {lawTree.map((node) => (
           <div key={node.id} className="mb-4">
