@@ -3,6 +3,6 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
-  base: '/lexramus/',
+  base: process.env.VITE_BASE_PATH ?? '/lexramus/',
   plugins: [react(), tailwindcss()],
 })
