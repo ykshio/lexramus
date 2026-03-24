@@ -3,7 +3,7 @@ import { useLawStore } from '../store/useLawStore'
 import { useTagStore, TAG_COLORS } from '../store/useTagStore'
 import { TagPicker } from './TagPicker'
 import { convertToArabic } from '../lib/kansuji'
-import { highlightText } from '../lib/highlight'
+import { applyBracketMode, applyBracketToHighlighted } from '../lib/rubyText'
 import type { LawTreeNode, LawNodeType } from '../types/law'
 
 const NODE_CENTER = 18
@@ -113,7 +113,7 @@ function getNodeTagStyle(lawId: string | null, nodeId: string): { bg: string; bo
 }
 
 function DiagramNode({ node, width }: { node: LawTreeNode; width: number }) {
-  const { expandedNodes, toggleNode, selectedLawId, useArabicNum, textSearchQuery, textSearchResultIds, textSearchActiveIndex } = useLawStore()
+  const { expandedNodes, toggleNode, selectedLawId, useArabicNum, bracketMode, textSearchQuery, textSearchResultIds, textSearchActiveIndex } = useLawStore()
   const [textExpanded, setTextExpanded] = useState(false)
   const isStructural = STRUCTURAL_TYPES.includes(node.type)
   const isTaggable = TAGGABLE_TYPES.includes(node.type)
@@ -188,7 +188,9 @@ function DiagramNode({ node, width }: { node: LawTreeNode; width: number }) {
     >
       {isTaggable && <TagPicker nodeId={node.id} />}
       <span className={`${textExpanded ? '' : 'truncate'} flex-1`}>
-        {textSearchQuery ? highlightText(displayText, textSearchQuery) : displayText}
+        {textSearchQuery
+          ? applyBracketToHighlighted(displayText, textSearchQuery, bracketMode)
+          : applyBracketMode(displayText, bracketMode)}
       </span>
       {hasChildren && (
         <svg

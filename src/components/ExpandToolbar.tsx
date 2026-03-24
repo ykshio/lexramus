@@ -1,9 +1,19 @@
+import { useState, useRef, useEffect } from 'react'
 import { useLawStore } from '../store/useLawStore'
+import type { BracketMode } from '../store/useLawStore'
 import { useTagStore, TAG_COLORS } from '../store/useTagStore'
 import { EXPAND_LEVELS } from '../types/law'
 import type { LawNodeType } from '../types/law'
 
 const ZOOM_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3]
+
+const BRACKET_OPTIONS: { value: BracketMode; label: string }[] = [
+  { value: 'bold', label: '濃い' },
+  { value: 'normal', label: '通常' },
+  { value: 'dim', label: '薄い' },
+  { value: 'collapse', label: '閉じる' },
+  { value: 'hidden', label: '隠す' },
+]
 
 export function ExpandToolbar() {
   const {
@@ -13,8 +23,22 @@ export function ExpandToolbar() {
     useArabicNum, toggleArabicNum,
     zoomLevel, setZoomLevel,
     isTextSearchOpen, openTextSearch,
+    bracketMode, setBracketMode,
   } = useLawStore()
   const { activeFilter, setActiveFilter } = useTagStore()
+  const [bracketMenuOpen, setBracketMenuOpen] = useState(false)
+  const bracketMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!bracketMenuOpen) return
+    const handleClick = (e: MouseEvent) => {
+      if (bracketMenuRef.current && !bracketMenuRef.current.contains(e.target as Node)) {
+        setBracketMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [bracketMenuOpen])
 
   if (lawTree.length === 0) return null
 
@@ -106,6 +130,38 @@ export function ExpandToolbar() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </button>
+
+        {/* 括弧表示モード */}
+        <div ref={bracketMenuRef} className="relative flex-shrink-0">
+          <button
+            onClick={() => setBracketMenuOpen(!bracketMenuOpen)}
+            className={`px-2 py-0.5 text-xs rounded border ${
+              bracketMode !== 'normal'
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+            }`}
+            title="括弧内テキストの表示切替"
+          >
+            （）
+          </button>
+          {bracketMenuOpen && (
+            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded shadow-lg z-50 whitespace-nowrap">
+              {BRACKET_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => { setBracketMode(opt.value); setBracketMenuOpen(false) }}
+                  className={`block w-full text-left px-3 py-1.5 text-xs ${
+                    bracketMode === opt.value
+                      ? 'bg-blue-50 text-blue-700 font-medium'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* 展開レベル（プレーン以外） - デスクトップでは同一行 */}
         {viewMode !== 'outline' && (

@@ -43,6 +43,7 @@ function getTagBgClass(lawId: string | null, nodeId: string): string {
 function OutlineNode({ node }: { node: LawTreeNode }) {
   const selectedLawId = useLawStore((s) => s.selectedLawId)
   const useArabicNum = useLawStore((s) => s.useArabicNum)
+  const bracketMode = useLawStore((s) => s.bracketMode)
   const textSearchQuery = useLawStore((s) => s.textSearchQuery)
   const textSearchResultIds = useLawStore((s) => s.textSearchResultIds)
   const textSearchActiveIndex = useLawStore((s) => s.textSearchActiveIndex)
@@ -67,7 +68,7 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
     const style = DEPTH_STYLES[node.depth] ?? 'text-sm font-medium text-gray-600 mt-2'
     return (
       <div id={`law-node-${node.id}`} className={`${style} ${searchHighlight} ${dimmed ? 'opacity-30' : ''}`}>
-        <RubyText segments={node.richTitle} searchQuery={sq} arabicNum={useArabicNum} />
+        <RubyText segments={node.richTitle} searchQuery={sq} arabicNum={useArabicNum} bracketMode={bracketMode} />
       </div>
     )
   }
@@ -78,11 +79,11 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
         {isTaggable && <TagPicker nodeId={node.id} />}
         <div className="flex-1">
           <span className="text-sm font-semibold text-gray-800">
-            <RubyText segments={node.richTitle} searchQuery={sq} arabicNum={useArabicNum} />
+            <RubyText segments={node.richTitle} searchQuery={sq} arabicNum={useArabicNum} bracketMode={bracketMode} />
           </span>
           {node.richContent.length > 0 && (
             <p className="text-sm text-gray-600 mt-0.5 leading-relaxed">
-              <RubyText segments={node.richContent} searchQuery={sq} />
+              <RubyText segments={node.richContent} searchQuery={sq} bracketMode={bracketMode} />
             </p>
           )}
         </div>
@@ -97,12 +98,12 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
         {isTaggable && <TagPicker nodeId={node.id} />}
         {hasTitle ? (
           <div className="flex items-baseline gap-0 text-sm text-gray-600 leading-relaxed flex-1">
-            <span className="shrink-0 font-medium"><RubyText segments={node.richTitle} searchQuery={sq} /></span>
-            {node.richContent.length > 0 && <span>{'\u3000'}<RubyText segments={node.richContent} searchQuery={sq} /></span>}
+            <span className="shrink-0 font-medium"><RubyText segments={node.richTitle} searchQuery={sq} bracketMode={bracketMode} /></span>
+            {node.richContent.length > 0 && <span>{'\u3000'}<RubyText segments={node.richContent} searchQuery={sq} bracketMode={bracketMode} /></span>}
           </div>
         ) : (
           <div className="text-sm text-gray-600 leading-relaxed flex-1" style={{ paddingLeft: '1em', textIndent: '1em' }}>
-            {node.richContent.length > 0 && <RubyText segments={node.richContent} searchQuery={sq} />}
+            {node.richContent.length > 0 && <RubyText segments={node.richContent} searchQuery={sq} bracketMode={bracketMode} />}
           </div>
         )}
       </div>
@@ -115,8 +116,8 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
       <div id={`law-node-${node.id}`} className={`ml-4 mt-0.5 group flex items-start gap-1 ${tagBg} ${searchHighlight} ${dimmed ? 'opacity-30' : ''}`}>
         {isTaggable && <TagPicker nodeId={node.id} />}
         <div className="flex items-baseline gap-0 text-sm text-gray-600 flex-1">
-          {hasTitle && <span className="shrink-0 font-medium"><RubyText segments={node.richTitle} searchQuery={sq} /></span>}
-          {node.richContent.length > 0 && <span>{hasTitle ? '\u3000' : ''}<RubyText segments={node.richContent} searchQuery={sq} /></span>}
+          {hasTitle && <span className="shrink-0 font-medium"><RubyText segments={node.richTitle} searchQuery={sq} bracketMode={bracketMode} /></span>}
+          {node.richContent.length > 0 && <span>{hasTitle ? '\u3000' : ''}<RubyText segments={node.richContent} searchQuery={sq} bracketMode={bracketMode} /></span>}
         </div>
       </div>
     )
@@ -128,8 +129,8 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
       <div id={`law-node-${node.id}`} className={`ml-8 mt-0.5 group flex items-start gap-1 ${tagBg} ${searchHighlight} ${dimmed ? 'opacity-30' : ''}`}>
         {isTaggable && <TagPicker nodeId={node.id} />}
         <div className="flex items-baseline gap-0 text-sm text-gray-600 flex-1">
-          {hasTitle && <span className="shrink-0 font-medium"><RubyText segments={node.richTitle} searchQuery={sq} /></span>}
-          {node.richContent.length > 0 && <span>{hasTitle ? '\u3000' : ''}<RubyText segments={node.richContent} searchQuery={sq} /></span>}
+          {hasTitle && <span className="shrink-0 font-medium"><RubyText segments={node.richTitle} searchQuery={sq} bracketMode={bracketMode} /></span>}
+          {node.richContent.length > 0 && <span>{hasTitle ? '\u3000' : ''}<RubyText segments={node.richContent} searchQuery={sq} bracketMode={bracketMode} /></span>}
         </div>
       </div>
     )
@@ -139,7 +140,7 @@ function OutlineNode({ node }: { node: LawTreeNode }) {
     return (
       <div id={`law-node-${node.id}`} className={`mt-3 mb-2 ${searchHighlight} ${dimmed ? 'opacity-30' : ''}`}>
         <p className="text-sm text-gray-600 leading-relaxed">
-          <RubyText segments={node.richContent} searchQuery={sq} />
+          <RubyText segments={node.richContent} searchQuery={sq} bracketMode={bracketMode} />
         </p>
       </div>
     )

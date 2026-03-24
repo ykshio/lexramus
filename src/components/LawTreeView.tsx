@@ -23,7 +23,7 @@ function getTagBgClass(lawId: string | null, nodeId: string): string {
 }
 
 function TreeNode({ node }: { node: LawTreeNode }) {
-  const { expandedNodes, toggleNode, selectedLawId, useArabicNum, textSearchQuery, textSearchResultIds, textSearchActiveIndex } = useLawStore()
+  const { expandedNodes, toggleNode, selectedLawId, useArabicNum, bracketMode, textSearchQuery, textSearchResultIds, textSearchActiveIndex } = useLawStore()
   const activeFilter = useTagStore((s) => s.activeFilter)
   const tags = useTagStore((s) => selectedLawId ? s.tags[selectedLawId]?.[node.id] : undefined)
 
@@ -79,20 +79,20 @@ function TreeNode({ node }: { node: LawTreeNode }) {
             !showTitle && node.type === 'paragraph' ? (
               node.richContent.length > 0 && (
                 <div className="text-sm text-gray-600" style={{ paddingLeft: '1em', textIndent: '1em' }}>
-                  <RubyText segments={node.richContent} searchQuery={textSearchQuery} arabicNum={useArabicNum} />
+                  <RubyText segments={node.richContent} searchQuery={textSearchQuery} arabicNum={useArabicNum} bracketMode={bracketMode} />
                 </div>
               )
             ) : (
             <div className="flex items-baseline gap-0">
               {showTitle && (
                 <span className="shrink-0 text-sm font-medium text-gray-700">
-                  <RubyText segments={richTitle} searchQuery={textSearchQuery} arabicNum={useArabicNum} />
+                  <RubyText segments={richTitle} searchQuery={textSearchQuery} arabicNum={useArabicNum} bracketMode={bracketMode} />
                 </span>
               )}
               {node.richContent.length > 0 && (
                 <span className="text-sm text-gray-600">
                   {showTitle ? '\u3000' : ''}
-                  <RubyText segments={node.richContent} searchQuery={textSearchQuery} arabicNum={useArabicNum} />
+                  <RubyText segments={node.richContent} searchQuery={textSearchQuery} arabicNum={useArabicNum} bracketMode={bracketMode} />
                 </span>
               )}
             </div>
@@ -107,12 +107,12 @@ function TreeNode({ node }: { node: LawTreeNode }) {
                       : 'font-medium text-gray-700'
                   }`}
                 >
-                  <RubyText segments={richTitle} searchQuery={textSearchQuery} arabicNum={useArabicNum} />
+                  <RubyText segments={richTitle} searchQuery={textSearchQuery} arabicNum={useArabicNum} bracketMode={bracketMode} />
                 </span>
               )}
               {node.richContent.length > 0 && (
                 <p className="text-sm text-gray-600 mt-0.5 leading-relaxed">
-                  <RubyText segments={node.richContent} searchQuery={textSearchQuery} arabicNum={useArabicNum} />
+                  <RubyText segments={node.richContent} searchQuery={textSearchQuery} arabicNum={useArabicNum} bracketMode={bracketMode} />
                 </p>
               )}
             </>

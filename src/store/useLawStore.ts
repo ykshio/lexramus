@@ -11,6 +11,7 @@ interface SearchResult {
 }
 
 export type ViewMode = 'list' | 'diagram' | 'outline'
+export type BracketMode = 'bold' | 'normal' | 'dim' | 'collapse' | 'hidden'
 
 interface LawStore {
   // 法令検索
@@ -36,6 +37,7 @@ interface LawStore {
   expandedNodes: Set<string>
   tocVisible: boolean
   useArabicNum: boolean
+  bracketMode: BracketMode
   zoomLevel: number
 
   // レスポンシブ
@@ -66,6 +68,7 @@ interface LawStore {
   loadRevisions: () => Promise<void>
   setSearchPanelOpen: (open: boolean) => void
   toggleArabicNum: () => void
+  setBracketMode: (mode: BracketMode) => void
   setZoomLevel: (level: number) => void
 
   // テキスト検索アクション
@@ -236,6 +239,7 @@ export const useLawStore = create<LawStore>((set, get) => ({
   expandedNodes: new Set(),
   tocVisible: false,
   useArabicNum: false,
+  bracketMode: 'normal',
   zoomLevel: 1,
 
   searchPanelOpen: true,
@@ -412,6 +416,8 @@ export const useLawStore = create<LawStore>((set, get) => ({
   setSearchPanelOpen: (open) => set({ searchPanelOpen: open }),
 
   toggleArabicNum: () => set((s) => ({ useArabicNum: !s.useArabicNum })),
+
+  setBracketMode: (mode) => set({ bracketMode: mode }),
 
   setZoomLevel: (level) => set({ zoomLevel: Math.max(0.25, Math.min(3, level)) }),
 
